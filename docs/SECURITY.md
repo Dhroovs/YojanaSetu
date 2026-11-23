@@ -1,5 +1,13 @@
 # Security and privacy review
 
+## Synthetic inspection isolation
+
+Demo-only users reject password login and existing sessions outside development;
+a real-Mongo regression verifies both paths and ordinary-account continuity.
+Passwords are Windows-user DPAPI encrypted under ignored .tools/inspection-demo,
+never committed/logged. Do not export the demo database into production. The app
+binds to loopback; no public tunnel is started. See LOCAL_DEMO_ACCESS.md.
+
 This is a local release candidate, not production security certification. The current
 production gate is **blocked** by unresolved ChromaDB upstream advisories. See
 [SECURITY_ADVISORIES.json](SECURITY_ADVISORIES.json), captured from OSV on 23 November

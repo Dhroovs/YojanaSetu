@@ -1,5 +1,32 @@
 # Phase 5 final handoff
 
+## Current final release mission checkpoint
+
+[FINAL_RELEASE_REPORT.md](FINAL_RELEASE_REPORT.md) supersedes historical Phase5
+counts below:108 backend tests passed in155.43s, frontend25 in1.85s, five Chrome
+regressions and16 persistent-demo screenshots passed with zero JS errors.
+The frontend http://localhost:5173/ and API http://127.0.0.1:8000/docs are running,
+with Mongo and scheduler against a separate synthetic database. Read
+LOCAL_DEMO_ACCESS.md for Windows DPAPI-protected temporary access. Never run the
+password-reveal command in captured tools/CI. Preserve the existing demo manifest,
+files, database and processes; do not delete/recreate them just to resume.
+
+The user confirmed pushing to Dhroovs/YojanaSetu, main, preserving public visibility.
+Existing authentication works; the remote was empty. Check FINAL_RELEASE_REPORT.md
+for observed push/CI outcomes before repeating a push. No force push is authorized.
+Static GitHub Pages showcase publication awaits the owner's reply. Do not infer
+approval from elapsed time. Budget is strictly INR0, no cards/trials/paid resources.
+FREE_HOSTING_REVIEW.md compares primary sources; no complete reliable hosted fit
+was established. Chroma remains the119-package OSV scan's only finding, still blocking
+public backend release. No public tunnel/backend or paid resource was created.
+
+Resume from current Git/remote/local health and complete only confirmed remaining
+push/publication/reporting. The demo includes a future assigned visit plus a separate
+reviewed, feedback-complete simulated visit; no real citizen data was used. Demo-only
+accounts reject login and existing sessions outside development. No Phase6.
+
+## Historical Phase5 closure evidence
+
 Baseline: `4098da0`. Local integrated release candidate; public release is blocked.
 No Phase 6, public deployment, GitHub push, cloud provisioning or paid model/message
 call was performed. This report supersedes historical Phase 1-4 verification counts.

@@ -1,5 +1,12 @@
 # Known limitations and release gates
 
+## Strictly free hosting
+
+FREE_HOSTING_REVIEW.md establishes no reliable fit among reviewed no-card/INR0
+providers for this complete persistent native stack plus worker. Full functionality
+is demonstrated locally; a static screenshot showcase must be clearly labeled.
+Current push/publication results are in FINAL_RELEASE_REPORT.md.
+
 1. **Production security gate blocked:** current latest ChromaDB 1.5.9 has unresolved
    upstream HTTP-server high/critical advisories. This app has no Chroma server entry
    point, but no package fix is available at verification time. CI deliberately flags

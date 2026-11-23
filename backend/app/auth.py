@@ -70,6 +70,7 @@ async def current_actor(request: Request, authorization: str = Header(default=""
     if (
         not user
         or not user.get("active", False)
+        or (user.get("demo_only") and request.app.state.settings.app_env != "development")
         or session.get("auth_version", 0) != user.get("auth_version", 0)
     ):
         raise HTTPException(401, "Session expired or revoked. Sign in again.")
@@ -205,6 +206,7 @@ def make_auth_router(settings):
             not good
             or not user
             or not user.get("active")
+            or (user.get("demo_only") and settings.app_env != "development")
             or (locked and locked > datetime.now(timezone.utc))
         ):
             if user and (not locked or locked <= datetime.now(timezone.utc)):

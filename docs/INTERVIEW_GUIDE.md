@@ -1,5 +1,12 @@
 # Interview overview and technical questions
 
+## Current demonstration evidence
+
+Use LOCAL_DEMO_ACCESS.md for the complete running local synthetic platform and
+FINAL_RELEASE_REPORT.md for exact current test counts/status. Never describe the
+optional static interview showcase as a deployed FastAPI/Mongo/worker backend.
+Explain the free-hosting persistence/worker constraints and Chroma release blocker.
+
 YojanaSetu discovers evidence-backed welfare information; SevaSetu coordinates internal
 in-person assistance. React/TypeScript calls FastAPI, MongoDB persists authorized state,
 and local Chroma/ONNX embeddings retrieve reviewed government evidence. Five bounded

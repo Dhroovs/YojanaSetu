@@ -10,9 +10,18 @@ uses an embedded local client and does not expose Chroma HTTP endpoints, but no 
 package version was available at verification. Docker/remote CI runtime, live LLM and
 native speech also remain explicitly unverified. This is not production certification,
 government authorization, an official MeeSeva partner or a publicly deployed service.
-No paid API call, public deployment, cloud resource or GitHub push was performed.
+No paid API call or cloud resource was used. See FINAL_RELEASE_REPORT.md for actual
+GitHub/public-showcase results; no complete public backend is claimed.
 
 ## Run locally
+
+The isolated synthetic inspection app runs at **http://localhost:5173/**, with API
+ docs at **http://127.0.0.1:8000/docs** while services remain running.
+[Demo role access](docs/LOCAL_DEMO_ACCESS.md) explains locally encrypted temporary
+passwords. [Final release report](docs/FINAL_RELEASE_REPORT.md) records **108 backend
+and 25 frontend tests**, five browser regressions and16 inspection screenshots.
+[Strictly free hosting review](docs/FREE_HOSTING_REVIEW.md) explains hosting limits.
+
 
 Exact Windows startup/provisioning: [LOCAL_SETUP_WINDOWS.md](docs/LOCAL_SETUP_WINDOWS.md).
 Start MongoDB, backend and the durable worker, then the frontend. Open

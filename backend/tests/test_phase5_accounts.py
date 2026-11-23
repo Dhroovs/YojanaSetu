@@ -1,11 +1,36 @@
+import asyncio
 import os
 
 import pytest
+from pymongo import AsyncMongoClient
 from test_phase3_mongo import live as live
 
 from app.ai.models import MatchResponse, Profile
 
 pytestmark = pytest.mark.skipif(not os.getenv("MONGO_TEST_URI"), reason="Set MONGO_TEST_URI")
+
+
+def test_demo_accounts_and_existing_sessions_are_rejected_outside_development(live):
+    c, headers, settings = live
+
+    async def mark_demo():
+        async with AsyncMongoClient(settings.mongodb_uri) as mongo:
+            await mongo[settings.mongodb_database].users.update_one(
+                {"id": "citizen-a"}, {"$set": {"demo_only": True}}
+            )
+
+    asyncio.run(mark_demo())
+    assert c.get("/api/auth/me", headers=headers["citizen-a"]).status_code == 200
+    settings.app_env = "production"
+    assert c.get("/api/auth/me", headers=headers["citizen-a"]).status_code == 401
+    assert (
+        c.post(
+            "/api/auth/login",
+            json={"username": "citizen-a", "password": "synthetic-password-for-isolated-tests"},
+        ).status_code
+        == 401
+    )
+    assert c.get("/api/auth/me", headers=headers["citizen-b"]).status_code == 200
 
 
 def test_registration_cannot_grant_roles_and_login_is_individual(live):

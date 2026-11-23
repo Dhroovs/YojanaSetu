@@ -1,5 +1,11 @@
 # API reference - generated route inventory
 
+## Demo account guard
+
+Both /api/auth/login and existing bearer-session checks reject accounts marked
+demo_only outside APP_ENV=development. No public endpoint provisions staff/demo roles.
+The local helper is operator-only and is not an HTTP API.
+
 This table is generated from the implemented FastAPI OpenAPI schema. It does not
 claim every optional/external operation has been runtime-tested. See TESTING.md and
 FINAL_HANDOFF.md for executed scope. Interactive local schemas are at `/docs`.

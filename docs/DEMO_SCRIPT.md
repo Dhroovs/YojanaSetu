@@ -1,5 +1,13 @@
 # Synthetic citizen-to-coordinator-to-worker demo
 
+## Ready-to-inspect synthetic walkthrough
+
+The running demo and secure role credentials are documented in LOCAL_DEMO_ACCESS.md.
+Start with demo-citizen, then demo-coordinator, demo-worker and demo-admin. Sign out
+on My account between roles. The NGO volunteer is a worker profile kind. Inspect the
+future assigned appointment and the distinct reviewed simulated visit/feedback.
+Screenshots in demo-evidence prove local behavior; they are not a public backend.
+
 Run the three processes in LOCAL_SETUP_WINDOWS.md, ingest reviewed sources, and provision
 separate worker/coordinator/admin aliases. Do not use real citizen documents, addresses,
 contact details or credentials in a recorded demo. Use separate browser profiles/tabs;

@@ -1,5 +1,13 @@
 # Tests and reproducible evidence
 
+## Subsequent final verification
+
+FINAL_RELEASE_REPORT.md records108 backend and25 frontend passing tests and fresh
+browser evidence. scripts.verify_inspection_demo checks the running synthetic demo,
+actual scheduler delivery, private access denial and a synthetic admin review-note
+mutation. It produces16 screenshots. It needs local Windows DPAPI access and is not
+a CI unit test. Never run scripts.local_demo access in captured CI/tool logs.
+
 Use synthetic data only. The backend suites use isolated test databases; real MongoDB
 is enabled by `MONGO_TEST_URI`. Without it Mongo-specific tests are skipped, so always
 report pass/fail/skip counts. Unit providers use mock transports and never paid APIs.

@@ -1,5 +1,13 @@
 # Current architecture - Phase 5 local candidate
 
+## Inspection runtime
+
+scripts.local_demo creates a separate synthetic Mongo database/private-file directory
+and copies only the public vector catalogue. Backend/frontend bind to loopback, with
+a separate worker started after fixture provisioning. Windows DPAPI protects random
+local role credentials. Demo-only accounts are rejected outside development. This
+does not alter production service boundaries or expose a public Chroma endpoint.
+
 This document replaces the historical Phase 1 architecture. Earlier Git commits and
 phase reports preserve that history. See FINAL_HANDOFF.md for observed results and
 SECURITY.md for the unresolved production dependency gate.

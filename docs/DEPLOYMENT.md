@@ -1,5 +1,12 @@
 # Deployment preparation - no deployment performed
 
+## Current release mission
+
+See FINAL_RELEASE_REPORT.md for actual push/publication/CI results. Under the owner's
+strict INR0/no-card/no-trial policy, consult FREE_HOSTING_REVIEW.md before provisioning.
+No reviewed host meets the full persistent native-runtime/worker requirements.
+A static showcase, if approved, is distinct from deploying the complete backend.
+
 Dockerfiles, `compose.yaml`, Nginx same-origin proxy, health dependency ordering,
 named persistence volumes, non-root application users, a separate scheduler and
 GitHub Actions gates are authored. Compose and workflow YAML parsed successfully.

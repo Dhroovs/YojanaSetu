@@ -1,5 +1,11 @@
 # Windows local setup
 
+## Running inspection environment
+
+The final mission maintains an isolated synthetic demo on ports5173/8000; check its
+health before starting competing services. LOCAL_DEMO_ACCESS.md provides secure local
+role access/restart commands. Existing normal .env and citizen datasets are preserved.
+
 Verified workspace: `E:\YojanaSetu\YojanaSetu`, Python 3.12 virtual environment and
 cached Node runtime. For a fresh checkout install Python 3.12, Node 24, MongoDB 8 and
 Chrome; then create the venv, install the lockfile and run `npm ci`. Browser tests also
