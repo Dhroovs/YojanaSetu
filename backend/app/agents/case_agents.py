@@ -40,6 +40,9 @@ class DocumentVerifier:
             "missing_item_ids": missing,
             "ready_for_human_review": ready,
             "checklist_verified": case.checklist_verified,
+            "doorstep_suggestion": "You may request a consented SevaSetu document-assistance visit."
+            if missing
+            else None,
             "next_action": "A coordinator can review the assistance task."
             if ready
             else "Confirm the source checklist with a coordinator."

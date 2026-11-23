@@ -547,8 +547,7 @@ function App() {
       </header>
       {language !== 'en' && (
         <p className="language-note" role="status">
-          {language === 'hi' ? 'हिन्दी अनुवाद अभी उपलब्ध नहीं है।' : 'తెలుగు అనువాదం ఇంకా అందుబాటులో లేదు.'}{' '}
-          Translation is not connected; content remains in English.
+          {t('partial')} Scheme explanations use English fallback.
         </p>
       )}
       <main id="main" lang="en">
@@ -588,7 +587,7 @@ function App() {
         <p className="small">
           Development prototype. No official approvals or submissions. Scheme matching requires
           local configuration. Document, follow-up and escalation assistance require a signed-in
-          account. Doorstep coordination is not connected.
+          account. SevaSetu visits require coordinator approval and worker acceptance.
         </p>
       </footer>
     </>

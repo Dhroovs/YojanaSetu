@@ -111,7 +111,17 @@ class DoorstepCoordinator:
         )
 
     async def generate_grounded_response(self, s):
+        from app.ai.providers import LanguageModel
+
         staff = s["actor"].role in {"admin", "coordinator"}
+        summary = await LanguageModel(self.service.settings).grounded_summary(
+            [
+                f"Internal visit stage: {s['booking']['stage']}.",
+                f"Requested service category: {s['booking']['category']}.",
+                "A confirmed visit requires coordinator approval and worker acceptance.",
+                "A SevaSetu visit does not grant government approval or certification.",
+            ]
+        )
         return self.step(
             s,
             "generate_grounded_response",
@@ -121,6 +131,7 @@ class DoorstepCoordinator:
                 "category": s["booking"]["category"],
                 "candidates": s["candidates"] if staff else [],
                 "next_action": "Coordinator approval and worker acceptance are required.",
+                "grounded_summary": summary,
                 "disclaimer": "Internal assistance, not government approval or certification.",
             },
         )

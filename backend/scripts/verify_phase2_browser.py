@@ -108,7 +108,7 @@ def main():
             )
             page.get_by_role("button", name="Find relevant schemes").click()
             expect(page.get_by_text("evidence-only RAG (no LLM)")).to_be_visible(timeout=60000)
-            expect(page.get_by_text("Unable to determine", exact=True)).to_be_visible()
+            expect(page.get_by_text("Unable to determine", exact=True).first).to_be_visible()
             expect(page.get_by_text("Source may be outdated.", exact=False)).to_be_visible()
             page.locator(".citation summary").first.click()
             expect(page.get_by_role("link", name="Read official source").first).to_have_attribute(
@@ -127,8 +127,10 @@ def main():
             ).to_be_visible()
             page.get_by_role("link", name="Discover", exact=True).click()
             page.get_by_label("Source type").select_option("verified")
-            expect(page.get_by_role("article")).to_have_count(1)
-            page.get_by_role("link", name="Explore scheme").click()
+            expect(page.get_by_role("article")).to_have_count(3)
+            page.get_by_role("article").filter(
+                has=page.get_by_role("heading", name="Pradhan Mantri Kisan Samman Nidhi (PM-KISAN)")
+            ).get_by_role("link", name="Explore scheme").click()
             expect(
                 page.get_by_role("heading", name="Official sources & verification")
             ).to_be_visible()

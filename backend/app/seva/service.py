@@ -6,7 +6,7 @@ from pymongo.errors import DuplicateKeyError
 
 from app.cases.models import UserRole, new_id, now_utc
 from app.cases.service import fingerprint, operation_key
-from app.seva.models import TERMINAL, VisitStage, fresh_booking
+from app.seva.models import TERMINAL, Slot, VisitStage, fresh_booking
 
 
 def reviewer(actor):
@@ -31,6 +31,8 @@ class SevaService:
         ):
             raise HTTPException(404, "Doorstep request not found for this account.")
         if actor.role == UserRole.worker:
+            if booking["stage"] in {s.value for s in TERMINAL}:
+                raise HTTPException(404, "Inactive visit is no longer available to this worker.")
             worker = await self.store.worker(actor.id)
             if not self.verified(worker, now_utc()):
                 raise HTTPException(403, "Worker verification is inactive or expired.")
@@ -40,13 +42,30 @@ class SevaService:
         result = deepcopy(booking)
         for key in ("_id", "creation_key", "creation_fingerprint", "operations"):
             result.pop(key, None)
-        if actor.role == UserRole.worker and not booking["assignment_accepted"]:
+        if actor.role == UserRole.worker and (
+            not booking["assignment_accepted"]
+            or booking["stage"]
+            not in {
+                VisitStage.scheduled,
+                VisitStage.en_route,
+                VisitStage.in_progress,
+                VisitStage.completion_review,
+            }
+        ):
             result["location"] = {
                 "district": booking["location"]["district"],
                 "mandal": booking["location"]["mandal"],
                 "village": booking["location"]["village"],
                 "address": "Available after assignment acceptance",
             }
+            result["description"] = "Private request details withheld outside an active visit."
+            result["audit"] = [
+                {k: v for k, v in event.items() if k != "note"} for event in result["audit"]
+            ]
+        if actor.role == UserRole.citizen:
+            result["worker_display_name"] = (
+                booking.get("worker_display_name") if booking["worker_id"] else None
+            )
         return result
 
     def audit(self, booking, actor, action, note=""):
@@ -64,6 +83,8 @@ class SevaService:
         )
 
     def notify(self, booking, kind, due=None):
+        if len(booking["notifications"]) >= 1000:
+            raise HTTPException(409, "Notification capacity reached; contact the coordinator.")
         key = f"{kind}:{booking['revision']}"
         if not any(n["key"] == key for n in booking["notifications"]):
             booking["notifications"].append(
@@ -194,7 +215,10 @@ class SevaService:
             "verification_history": [],
             "account_role": account["role"],
         }
-        await self.store.workers.insert_one(deepcopy(record))
+        try:
+            await self.store.workers.insert_one(deepcopy(record))
+        except DuplicateKeyError as exc:
+            raise HTTPException(409, "Profile already exists; refresh the profile.") from exc
         return self.worker_view(record)
 
     def worker_view(self, worker):
@@ -205,7 +229,91 @@ class SevaService:
         result["verification_label"] = (
             "Internal/organization review only; not government certification."
         )
+        if result["verification_status"] in {
+            "verified_internally",
+            "authorization_confirmed",
+        } and not self.verified(worker, now_utc()):
+            result["verification_status"] = "expired"
         return result
+
+    async def update_worker(self, worker_id, body, actor):
+        if actor.role != UserRole.admin and (
+            actor.id != worker_id or actor.role not in {UserRole.worker, UserRole.coordinator}
+        ):
+            raise HTTPException(403, "Only the worker or administrator may edit this profile.")
+        worker = await self.store.worker(worker_id)
+        if not worker:
+            raise HTTPException(404, "Worker not found.")
+        if not body.confirmed or not body.note:
+            raise HTTPException(422, "Confirm the material change with a review note.")
+        if any(r["end"] > now_utc() for r in worker["reservations"]):
+            raise HTTPException(409, "Resolve reserved visits before changing eligibility details.")
+        if body.profile.organization_id and not await self.store.db.seva_organizations.find_one(
+            {"id": body.profile.organization_id, "active": True}
+        ):
+            raise HTTPException(422, "Organization is unknown or inactive.")
+        result = await self.store.workers.update_one(
+            {"id": worker_id, "revision": body.revision},
+            {
+                "$set": {
+                    **body.profile.model_dump(mode="python"),
+                    "active": body.active,
+                    "verification_status": "pending_verification",
+                    "verification_expires_at": None,
+                },
+                "$inc": {"revision": 1},
+                "$push": {
+                    "verification_history": {
+                        "actor_id": actor.id,
+                        "at": now_utc(),
+                        "status": "pending_verification",
+                        "note": body.note,
+                    }
+                },
+            },
+        )
+        if not result.matched_count:
+            raise HTTPException(409, "Profile changed. Refresh before editing.")
+        return self.worker_view(await self.store.worker(worker_id))
+
+    async def preferences(self, booking_id, actor, body, key):
+        booking = await self.authorized(booking_id, actor)
+        if actor.role != UserRole.citizen or actor.id != booking["owner_id"]:
+            raise HTTPException(
+                403, "Only the citizen may change sharing and notification preferences."
+            )
+        if not body.confirmed:
+            raise HTTPException(422, "Confirm the preference change.")
+        released = []
+
+        async def change(b):
+            if (
+                (not body.share_with_assigned_worker or body.language != b["language"])
+                and b["worker_id"]
+                and b["stage"]
+                not in {s.value for s in TERMINAL | {VisitStage.completed, VisitStage.followup}}
+            ):
+                released.append(b["worker_id"])
+                b.update(
+                    worker_id=None,
+                    appointment=None,
+                    assignment_accepted=False,
+                    stage=VisitStage.pending.value,
+                )
+                self.notify(b, "sharing_withdrawn")
+            b.update(
+                preferences=body.preferences.model_dump(mode="python"),
+                language=body.language,
+                share_with_assigned_worker=body.share_with_assigned_worker,
+            )
+            for notice in b["notifications"]:
+                if not notice["delivered_at"]:
+                    notice["language"] = body.language
+
+        result = await self.mutate(booking_id, actor, body, key, "preferences", change)
+        for worker_id in released:
+            await self.store.release(worker_id, booking_id)
+        return self.view(result, actor)
 
     async def verify_worker(self, worker_id, body, actor):
         if actor.role != UserRole.admin:
@@ -353,6 +461,8 @@ class SevaService:
             return self.view(booking, actor)
         if not body.confirmed:
             raise HTTPException(422, "Coordinator must confirm this assignment proposal.")
+        if not booking.get("approval"):
+            raise HTTPException(409, "Coordinator review approval is required before assignment.")
         if booking["stage"] not in {
             VisitStage.approved,
             VisitStage.unavailable,
@@ -362,12 +472,17 @@ class SevaService:
             raise HTTPException(409, "Request must be approved and unassigned before assignment.")
         if body.window.start <= now_utc():
             raise HTTPException(422, "Choose a future appointment window.")
-        if body.worker_id not in {
-            c["worker_id"] for c in await self.candidates(booking, body.window)
-        }:
+        if body.window.model_dump(mode="python") != booking["preferred_window"]:
+            raise HTTPException(
+                409, "Ask the citizen to confirm a new preferred window before assigning it."
+            )
+        candidates = await self.candidates(booking, body.window)
+        if body.worker_id not in {c["worker_id"] for c in candidates}:
             raise HTTPException(
                 409, "Worker is not eligible/available. An override cannot bypass eligibility."
             )
+        if candidates[0]["worker_id"] != body.worker_id and not body.override_reason.strip():
+            raise HTTPException(422, "Record why a lower ranked eligible worker was chosen.")
         worker = await self.store.worker(body.worker_id)
         await self.store.reserve(worker, booking_id, body.window, now_utc(), body.revision)
         old_worker = booking["worker_id"]
@@ -375,11 +490,14 @@ class SevaService:
         async def change(current):
             current.update(
                 worker_id=body.worker_id,
+                worker_display_name=worker["display_name"],
                 appointment=body.window.model_dump(mode="python"),
                 assignment_accepted=False,
                 stage=VisitStage.assigned.value,
             )
             self.notify(current, "assignment_proposed")
+            if body.override_reason:
+                self.audit(current, actor, "eligible_ranking_override", body.override_reason)
 
         try:
             result = await self.mutate(booking_id, actor, body, key, "assignment", change)
@@ -400,6 +518,7 @@ class SevaService:
             "no_show",
             "close",
             "resolve_escalation",
+            "no_worker_available",
         }:
             reviewer(actor)
         released = []
@@ -408,6 +527,15 @@ class SevaService:
             stage = VisitStage(b["stage"])
             is_owner = actor.role == UserRole.citizen and actor.id == b["owner_id"]
             is_worker = actor.role == UserRole.worker and actor.id == b["worker_id"]
+            if action in {"cancel", "reschedule"} and stage in {
+                VisitStage.in_progress,
+                VisitStage.completion_review,
+                VisitStage.completed,
+                VisitStage.followup,
+            }:
+                raise HTTPException(
+                    409, "Use problem reporting or follow-up for a started/completed visit."
+                )
             if action == "claim":
                 if stage in TERMINAL:
                     raise HTTPException(409, "Closed requests cannot be claimed.")
@@ -416,11 +544,19 @@ class SevaService:
                 b["coordinator_id"] = actor.id
             elif action == "approve":
                 if (
-                    stage not in {VisitStage.pending, VisitStage.escalated}
+                    stage
+                    not in {
+                        VisitStage.pending,
+                        VisitStage.escalated,
+                        VisitStage.reschedule,
+                        VisitStage.unavailable,
+                        VisitStage.no_show,
+                    }
                     or not b["share_with_assigned_worker"]
                 ):
                     raise HTTPException(409, "Consent and pending coordinator review are required.")
                 b["stage"] = VisitStage.approved.value
+                b["approval"] = {"actor_id": actor.id, "at": now_utc()}
             elif action == "reject":
                 if stage not in {VisitStage.pending, VisitStage.approved} or not body.note:
                     raise HTTPException(
@@ -453,6 +589,16 @@ class SevaService:
                     )
                 else:
                     worker = await self.store.worker(actor.id)
+                    if (
+                        worker
+                        and worker["organization_id"]
+                        and not await self.store.db.seva_organizations.find_one(
+                            {"id": worker["organization_id"], "active": True}
+                        )
+                    ):
+                        raise HTTPException(
+                            409, "Organization is inactive; ask the coordinator to reassign."
+                        )
                     if not self.verified(worker, b["appointment"]["end"]) or not any(
                         r["booking_id"] == booking_id for r in worker["reservations"]
                     ):
@@ -622,8 +768,25 @@ class SevaService:
                 b["stage"] = (
                     VisitStage.completion_review.value
                     if b["outcome"]
+                    else VisitStage.scheduled.value
+                    if b["worker_id"] and b["assignment_accepted"]
+                    else VisitStage.assigned.value
+                    if b["worker_id"] and b["appointment"]
                     else VisitStage.approved.value
                 )
+                b["approval"] = {"actor_id": actor.id, "at": now_utc()}
+            elif action == "no_worker_available":
+                if stage not in {
+                    VisitStage.approved,
+                    VisitStage.reschedule,
+                } or await self.candidates(b, Slot.model_validate(b["preferred_window"])):
+                    raise HTTPException(
+                        409,
+                        "Only approved requests with no eligible worker may be marked unavailable.",
+                    )
+                b["stage"] = VisitStage.unavailable.value
+                self.escalate(b, "no_eligible_worker")
+                self.notify(b, "no_worker_available")
 
         booking = await self.mutate(
             booking_id, actor, body, key, action, change, claim=action == "claim"

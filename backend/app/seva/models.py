@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 from enum import Enum
-from typing import Literal
+from typing import Annotated, Literal
 
 from pydantic import Field, field_validator, model_validator
 
@@ -49,6 +49,7 @@ Category = Literal[
     "scheme_guidance", "document_assistance", "digital_assistance", "accessibility_support"
 ]
 Language = Literal["en", "hi", "te"]
+ShortText = Annotated[str, Field(min_length=1, max_length=200)]
 
 
 class BookingInput(Strict):
@@ -102,14 +103,14 @@ TERMINAL = {VisitStage.closed, VisitStage.cancelled, VisitStage.rejected}
 
 class WorkerInput(Strict):
     display_name: str = Field(min_length=2, max_length=80)
-    organization_id: str | None = None
+    organization_id: str | None = Field(default=None, max_length=80)
     kind: Literal["ngo_volunteer", "field_worker", "service_partner", "coordinator"]
     categories: list[Category] = Field(min_length=1, max_length=4)
     languages: list[Language] = Field(min_length=1, max_length=3)
-    districts: list[str] = Field(min_length=1, max_length=30)
-    areas: list[str] = Field(default_factory=list, max_length=50)
-    capabilities: list[str] = Field(default_factory=list, max_length=10)
-    qualifications: list[str] = Field(default_factory=list, max_length=10)
+    districts: list[ShortText] = Field(min_length=1, max_length=30)
+    areas: list[ShortText] = Field(default_factory=list, max_length=50)
+    capabilities: list[ShortText] = Field(default_factory=list, max_length=10)
+    qualifications: list[ShortText] = Field(default_factory=list, max_length=10)
     capacity: int = Field(default=5, ge=1, le=20)
 
 
@@ -122,6 +123,19 @@ class Availability(Change):
         if any(a.end > b.start for a, b in zip(ordered, ordered[1:])):
             raise ValueError("Availability windows cannot overlap")
         return self
+
+
+class WorkerUpdate(Change):
+    profile: WorkerInput
+    active: bool = True
+    confirmed: bool
+
+
+class BookingPreferences(Change):
+    preferences: Preferences
+    language: Language
+    share_with_assigned_worker: bool
+    confirmed: bool
 
 
 class WorkerVerification(Change):
@@ -165,12 +179,13 @@ class BookingAction(Change):
         "close",
         "feedback",
         "resolve_escalation",
+        "no_worker_available",
     ]
     confirmed: bool = False
     window: Slot | None = None
     services_performed: list[Category] = Field(default_factory=list, max_length=4)
-    documents_assisted: list[str] = Field(default_factory=list, max_length=10)
-    task_checklist: list[str] = Field(default_factory=list, max_length=20)
+    documents_assisted: list[ShortText] = Field(default_factory=list, max_length=10)
+    task_checklist: list[ShortText] = Field(default_factory=list, max_length=20)
     followup_at: datetime | None = None
     rating: int | None = Field(default=None, ge=1, le=5)
 
@@ -192,6 +207,7 @@ def fresh_booking(body, owner, key, digest):
         "updated_at": now_utc(),
         "revision": 0,
         "coordinator_id": None,
+        "approval": None,
         "worker_id": None,
         "appointment": None,
         "assignment_accepted": False,

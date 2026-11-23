@@ -14,6 +14,7 @@ class SevaStore:
             await self.bookings.create_index(key)
         await self.workers.create_index("id", unique=True)
         await self.db.seva_organizations.create_index("id", unique=True)
+        await self.db.seva_rate_limits.create_index("expires_at", expireAfterSeconds=0)
 
     async def booking(self, booking_id):
         return await self.bookings.find_one({"id": booking_id}, {"_id": 0})

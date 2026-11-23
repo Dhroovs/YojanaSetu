@@ -1,0 +1,21 @@
+{
+  "source_id": "pmsby-dfs-faq",
+  "scheme_id": "pmsby",
+  "scheme_name": "Pradhan Mantri Suraksha Bima Yojana (PMSBY)",
+  "department": "Department of Financial Services, Ministry of Finance",
+  "scope": "central",
+  "geographic_coverage": ["India"],
+  "category": "Insurance",
+  "official_url": "https://financialservices.gov.in/pmsby",
+  "document_title": "PMSBY official frequently asked questions",
+  "published_at": "2025-12-24",
+  "reviewed_at": "2026-11-23",
+  "verification_status": "verified",
+  "completeness": "partial",
+  "age_restrictions": "18–70 years; enrollment and termination conditions also apply.",
+  "field_evidence": {"age_restrictions": "age group of 18 to 70 years"},
+  "rules": [
+    {"field": "age", "operator": "gte", "value": 18, "source_id": "pmsby-dfs-faq", "quote": "age group of 18 to 70 years"},
+    {"field": "age", "operator": "lte", "value": 70, "source_id": "pmsby-dfs-faq", "quote": "age group of 18 to 70 years"}
+  ]
+}

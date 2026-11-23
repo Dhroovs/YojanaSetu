@@ -29,7 +29,7 @@ terminal, then start the frontend as below. Open http://localhost:5173/login.
 Pending reminders survive restarts because schedules are in MongoDB; the worker must
 be running for delivery and physical retention cleanup. Refreshing the browser clears
 the memory-only sign-in session. There is no public registration or role selection.
-Phase 4 Doorstep Coordinator remains unimplemented.
+SevaSetu now supports consented requests, verified-worker calendars, coordinator assignment, worker acceptance, outcome review and in-app updates. See [Phase 4 operations](docs/phase4.md), [completion report](docs/phase4-completion.md) and [interview guide](docs/interview-guide.md).
 
 ## Phase 2 quick start
 
@@ -152,26 +152,23 @@ persistence and Chrome workflow checks have also passed. See
 
 ## Scope and limitations
 
-Implemented flows: API-backed scheme search/details, local case creation and lookup,
-doorstep request storage, semantic scheme matching, cited rules, follow-up memory,
-responsive navigation, loading/error/empty states, authenticated owned cases, private
-document reviews, durable reminders and internal human referral. Worker dispatch and
-translation are not connected. Local LLM use is optional.
-No real eligibility decision, KYC or official submission occurs. Case access is
-restricted to explicitly enabled local development. See architecture notes before
-extending security or ingestion. Phase 4 has not started.
+SevaSetu's citizen, worker, coordinator and administrator flows are integrated with
+five bounded agent workflows. All assignment and completion decisions retain human
+review. The local index contains three partial official sources: PM-KISAN, PMSBY
+and Telangana Kalyana Lakshmi. Partial evidence never establishes complete eligibility.
 
-Verification uses bundled runtimes because Python and Node/npm were absent from PATH.
-Backend: 72 pytest tests passed with real MongoDB; imports, Ruff lint and format passed.
-`requirements.lock.txt` records the installed backend versions (Python 3.12, Windows).
-Frontend: 12 tests passed; ESLint and the TypeScript/Vite
-production build passed. Dependency audit reported zero vulnerabilities after
-upgrading tools and the router. A scoped minimatch override patches a transitive
-lint dependency; revisit it when typescript-eslint updates its dependency range.
-`frontend/package-lock.json` records the verified dependency tree. These audit
-results describe the installation at verification time, not a future guarantee.
+English/Hindi/Telugu navigation and notification templates are supported; most forms
+and scheme/legal explanations use English fallback. Voice and external SMS/WhatsApp
+are not connected. Live LLM inference remains unverified; retrieval-only mode works,
+with mocked provider/fallback tests. No government submission, KYC, approval or
+MeeSeva affiliation is implied. This is a local development application.
 
-RAG details: [docs/phase2.md](docs/phase2.md). Current case-assistance run commands,
-API reference, security limitations and workflow diagrams: [docs/phase3.md](docs/phase3.md).
+Latest verification: **95 backend tests** against real MongoDB and **20 frontend
+tests**, plus TypeScript, lint, production build and four Chrome workflows passed.
+See [the completion report](docs/phase4-completion.md) for exact results, source hashes,
+remaining risks and the requirement status matrix. Dependency locks describe the
+verified local installation; they are not a future security guarantee.
 
-Suggested commit: `feat: add authenticated multi-agent case assistance and durable follow-ups`
+For exact Windows commands, environment variables, endpoint tables, architecture,
+agent/lifecycle diagrams, verification policy and production prerequisites, read
+[Phase 4 operations](docs/phase4.md). Earlier reports remain historical evidence.

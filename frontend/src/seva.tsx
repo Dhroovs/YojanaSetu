@@ -16,6 +16,10 @@ interface Booking {
   owner_id: string;
   coordinator_id: string | null;
   worker_id: string | null;
+  worker_display_name?: string | null;
+  language: string;
+  share_with_assigned_worker: boolean;
+  preferences: { in_app: boolean; quiet_start: number; quiet_end: number };
   preferred_window: Window;
   appointment: Window | null;
   location: { district: string; mandal: string; village: string; address: string };
@@ -48,6 +52,15 @@ interface Worker {
   current_workload: number;
   capacity: number;
   verification_label: string;
+  organization_id: string | null;
+  kind: string;
+  categories: string[];
+  languages: string[];
+  districts: string[];
+  areas: string[];
+  capabilities: string[];
+  qualifications: string[];
+  active: boolean;
 }
 interface Page<T> {
   items: T[];
@@ -71,6 +84,330 @@ const readable = (value: string) => value.replaceAll('_', ' ');
 const time = (value: string) =>
   new Date(value).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' });
 const iso = (value: string) => new Date(value).toISOString();
+
+function BookingPreferenceForm({
+  booking,
+  onSave,
+}: {
+  booking: Booking;
+  onSave: (b: Booking) => void;
+}) {
+  const { token } = useAuth();
+  const [error, setError] = useState('');
+  const [busy, setBusy] = useState(false);
+  return (
+    <form
+      className="panel"
+      key={booking.revision}
+      onSubmit={async (e) => {
+        e.preventDefault();
+        setBusy(true);
+        const d = new FormData(e.currentTarget);
+        try {
+          onSave(
+            await privateApi<Booking>(token, `/seva/requests/${booking.id}/preferences`, {
+              revision: booking.revision,
+              confirmed: d.get('confirm') === 'on',
+              language: d.get('language'),
+              share_with_assigned_worker: d.get('share') === 'on',
+              preferences: {
+                in_app: d.get('notify') === 'on',
+                quiet_start: Number(d.get('quietStart')),
+                quiet_end: Number(d.get('quietEnd')),
+              },
+              note: 'Citizen updated communication and sharing preferences',
+            }),
+          );
+          setError('');
+        } catch (e) {
+          setError((e as Error).message);
+        } finally {
+          setBusy(false);
+        }
+      }}
+    >
+      <h2>Sharing & notification preferences</h2>
+      <p>
+        Withdrawing sharing consent cancels an active assignment. Quiet hours use India time; equal
+        start/end disables quiet hours.
+      </p>
+      <label>
+        Notification language
+        <select name="language" defaultValue={booking.language}>
+          {['en', 'hi', 'te'].map((l) => (
+            <option key={l}>{l}</option>
+          ))}
+        </select>
+      </label>
+      <label className="check-label">
+        <input type="checkbox" name="share" defaultChecked={booking.share_with_assigned_worker} />
+        Share necessary details with the assigned worker
+      </label>
+      <label className="check-label">
+        <input type="checkbox" name="notify" defaultChecked={booking.preferences.in_app} />
+        Deliver in-app notices
+      </label>
+      <label>
+        Quiet hours start (0–23 IST)
+        <input
+          type="number"
+          min={0}
+          max={23}
+          name="quietStart"
+          defaultValue={booking.preferences.quiet_start}
+        />
+      </label>
+      <label>
+        Quiet hours end (0–23 IST)
+        <input
+          type="number"
+          min={0}
+          max={23}
+          name="quietEnd"
+          defaultValue={booking.preferences.quiet_end}
+        />
+      </label>
+      <label className="check-label">
+        <input type="checkbox" name="confirm" required />I confirm these preference changes
+      </label>
+      <button disabled={busy}>Save sharing & notification preferences</button>
+      {error && <p role="alert">{error}</p>}
+    </form>
+  );
+}
+
+function WorkerProfileEditor({
+  profile,
+  onSave,
+}: {
+  profile: Worker;
+  onSave: (w: Worker) => void;
+}) {
+  const { token } = useAuth();
+  const [error, setError] = useState('');
+  const [busy, setBusy] = useState(false);
+  const fields = {
+    display_name: 'Worker display name',
+    organization_id: 'Organization reference (optional)',
+    districts: 'Service districts',
+    areas: 'Service mandals or villages (optional)',
+    qualifications: 'Training or qualifications (optional)',
+  };
+  return (
+    <details>
+      <summary>Edit profile and request reverification</summary>
+      <form
+        key={profile.revision}
+        onSubmit={async (e) => {
+          e.preventDefault();
+          setBusy(true);
+          const d = new FormData(e.currentTarget);
+          const split = (key: string) =>
+            String(d.get(key) || '')
+              .split(',')
+              .map((v) => v.trim())
+              .filter(Boolean);
+          try {
+            onSave(
+              await privateApi<Worker>(token, `/seva/workers/${profile.id}/profile`, {
+                revision: profile.revision,
+                confirmed: true,
+                note: d.get('note'),
+                active: d.get('active') === 'on',
+                profile: {
+                  display_name: d.get('display_name'),
+                  organization_id: d.get('organization_id') || null,
+                  kind: profile.kind,
+                  categories: d.getAll('categories'),
+                  languages: d.getAll('languages'),
+                  districts: split('districts'),
+                  areas: split('areas'),
+                  qualifications: split('qualifications'),
+                  capabilities: d.getAll('capabilities'),
+                  capacity: Number(d.get('capacity')),
+                },
+              }),
+            );
+            setError('');
+          } catch (e) {
+            setError((e as Error).message);
+          } finally {
+            setBusy(false);
+          }
+        }}
+      >
+        <p>Material changes reset verification. Resolve reserved visits before editing.</p>
+        {Object.entries(fields).map(([key, label]) => (
+          <label key={key}>
+            {label}
+            <input
+              name={key}
+              maxLength={1000}
+              defaultValue={
+                Array.isArray(profile[key as keyof Worker])
+                  ? (profile[key as keyof Worker] as string[]).join(', ')
+                  : String(profile[key as keyof Worker] || '')
+              }
+            />
+          </label>
+        ))}
+        <label>
+          Capacity
+          <input name="capacity" type="number" min={1} max={20} defaultValue={profile.capacity} />
+        </label>
+        {Object.entries({
+          categories: Object.keys(names),
+          languages: ['en', 'hi', 'te'],
+          capabilities: [
+            'reading_help',
+            'wheelchair_access',
+            'hearing_support',
+            'caregiver_support',
+          ],
+        }).map(([key, values]) => (
+          <fieldset key={key}>
+            <legend>{readable(key)}</legend>
+            {values.map((v) => (
+              <label className="check-label" key={v}>
+                <input
+                  type="checkbox"
+                  name={key}
+                  value={v}
+                  defaultChecked={(profile[key as keyof Worker] as string[]).includes(v)}
+                />
+                {names[v] || readable(v)}
+              </label>
+            ))}
+          </fieldset>
+        ))}
+        <label className="check-label">
+          <input type="checkbox" name="active" defaultChecked={profile.active} />
+          Active for assignments after verification
+        </label>
+        <label>
+          Reason for profile change
+          <textarea name="note" maxLength={600} required />
+        </label>
+        <label className="check-label">
+          <input type="checkbox" required />I confirm these changes and the need for reverification
+        </label>
+        <button disabled={busy}>Save profile for reverification</button>
+        {error && <p role="alert">{error}</p>}
+      </form>
+    </details>
+  );
+}
+
+interface Organization {
+  id: string;
+  display_name: string;
+  kind: string;
+  active: boolean;
+  verified_internally: boolean;
+  revision: number;
+}
+function OrganizationManager() {
+  const { user, token } = useAuth();
+  const [rows, setRows] = useState<Organization[]>([]);
+  const [error, setError] = useState('');
+  const [busy, setBusy] = useState(false);
+  useEffect(() => {
+    if (user)
+      void privateApi<Organization[]>(token, '/seva/organizations')
+        .then(setRows)
+        .catch((e) => setError(e.message));
+  }, [user, token]);
+  return (
+    <section className="panel">
+      <h2>Service organizations</h2>
+      <p>Internal records do not establish government partnership.</p>
+      {rows.map((o) => (
+        <p key={o.id}>
+          {o.display_name} · {o.id} · {o.active ? 'Active' : 'Inactive'} ·{' '}
+          {o.verified_internally ? 'Internally reviewed' : 'Unverified'}{' '}
+          {user?.role === 'admin' && (
+            <button
+              disabled={busy}
+              onClick={async () => {
+                if (!window.confirm('Confirm this organization status change?')) return;
+                setBusy(true);
+                try {
+                  const updated = await privateApi<Organization>(
+                    token,
+                    `/seva/organizations/${o.id}?revision=${o.revision}`,
+                    {
+                      display_name: o.display_name,
+                      kind: o.kind,
+                      verified_internally: o.verified_internally,
+                      confirmed: true,
+                      active: !o.active,
+                    },
+                  );
+                  setRows((r) => r.map((old) => (old.id === o.id ? updated : old)));
+                } catch (e) {
+                  setError((e as Error).message);
+                } finally {
+                  setBusy(false);
+                }
+              }}
+            >
+              {o.active ? 'Deactivate organization' : 'Activate organization'}
+            </button>
+          )}
+        </p>
+      ))}
+      {rows.length === 0 && <p>No organizations recorded.</p>}
+      {user?.role === 'admin' && (
+        <form
+          onSubmit={async (e) => {
+            e.preventDefault();
+            const form = e.currentTarget;
+            const d = new FormData(form);
+            setBusy(true);
+            try {
+              const created = await privateApi<Organization>(token, '/seva/organizations', {
+                display_name: d.get('name'),
+                kind: d.get('kind'),
+                active: true,
+                verified_internally: d.get('verified') === 'on',
+                confirmed: true,
+              });
+              setRows((r) => [...r, created]);
+              form.reset();
+              setError('');
+            } catch (e) {
+              setError((e as Error).message);
+            } finally {
+              setBusy(false);
+            }
+          }}
+        >
+          <label>
+            Organization name
+            <input name="name" required minLength={2} maxLength={100} />
+          </label>
+          <label>
+            Organization type
+            <select name="kind">
+              <option value="ngo">NGO</option>
+              <option value="service_partner">Service partner</option>
+              <option value="field_team">Field team</option>
+            </select>
+          </label>
+          <label className="check-label">
+            <input type="checkbox" name="verified" />
+            Internal review completed
+          </label>
+          <label className="check-label">
+            <input type="checkbox" required />I confirm the organization record
+          </label>
+          <button disabled={busy}>Create organization</button>
+        </form>
+      )}
+      {error && <p role="alert">{error}</p>}
+    </section>
+  );
+}
 
 export function SevaDashboard() {
   const { user, token } = useAuth();
@@ -199,6 +536,23 @@ export function SevaDashboard() {
       {rows && (
         <>
           <p>{rows.total} request(s)</p>
+          {!unassigned && (
+            <section className="panel" aria-label="Appointment agenda">
+              <h2>Appointment agenda (current page, IST)</h2>
+              {rows.items
+                .filter((b) => b.appointment)
+                .sort((a, b) => a.appointment!.start.localeCompare(b.appointment!.start))
+                .map((b) => (
+                  <p key={b.id}>
+                    {time(b.appointment!.start)}–{time(b.appointment!.end)} · {names[b.category]} ·{' '}
+                    {readable(b.stage)}
+                  </p>
+                ))}
+              {!rows.items.some((b) => b.appointment) && (
+                <p>No appointment windows on this page.</p>
+              )}
+            </section>
+          )}
           <div className="grid">
             {rows.items.map((b) => (
               <article className="card" key={b.id}>
@@ -446,6 +800,9 @@ export function SevaRequestDetail() {
   const [selected, setSelected] = useState('');
   const [agent, setAgent] = useState('');
   const [performedTask, setPerformedTask] = useState('');
+  const [performedServices, setPerformedServices] = useState<string[]>([]);
+  const [documentsAssisted, setDocumentsAssisted] = useState('');
+  const [overrideReason, setOverrideReason] = useState('');
   async function refresh() {
     setBooking(await privateApi<Booking>(token, `/seva/requests/${id}`));
   }
@@ -498,6 +855,18 @@ export function SevaRequestDetail() {
     staff = user.role === 'admin' || user.role === 'coordinator',
     owner = user.role === 'citizen',
     worker = user.role === 'worker';
+  const canChangeSchedule =
+    [
+      'pending_coordinator_review',
+      'approved_for_assignment',
+      'worker_assigned',
+      'visit_scheduled',
+      'worker_en_route',
+      'rescheduling_requested',
+      'no_worker_available',
+      'no_show',
+      'escalated',
+    ].includes(b.stage) && !b.outcome;
   return (
     <>
       <header className="page-title">
@@ -519,6 +888,9 @@ export function SevaRequestDetail() {
       )}
       <section className="panel">
         <h2>Booking details</h2>
+        {b.worker_display_name && (
+          <p>Assigned worker: {b.worker_display_name} (internal verification only)</p>
+        )}
         <p>{b.description}</p>
         <p>
           {b.location.district} · {b.location.mandal} · {b.location.village}
@@ -581,6 +953,9 @@ export function SevaRequestDetail() {
         <div className="quick-actions">
           {staff && (
             <>
+              <button disabled={busy} onClick={() => void action('no_worker_available')}>
+                Record no eligible worker available
+              </button>
               <button disabled={busy} onClick={() => void action('approve')}>
                 Approve for internal assignment
               </button>
@@ -620,14 +995,46 @@ export function SevaRequestDetail() {
               </button>
               <label>
                 Tasks actually performed (required for outcome)
-                <input maxLength={200} value={performedTask} onChange={(e) => setPerformedTask(e.target.value)} />
+                <input
+                  maxLength={200}
+                  value={performedTask}
+                  onChange={(e) => setPerformedTask(e.target.value)}
+                />
+              </label>
+              <fieldset>
+                <legend>Services actually performed</legend>
+                {Object.entries(names).map(([key, label]) => (
+                  <label className="check-label" key={key}>
+                    <input
+                      type="checkbox"
+                      checked={performedServices.includes(key)}
+                      onChange={(e) =>
+                        setPerformedServices((old) =>
+                          e.target.checked ? [...old, key] : old.filter((v) => v !== key),
+                        )
+                      }
+                    />
+                    {label}
+                  </label>
+                ))}
+              </fieldset>
+              <label>
+                Documents assisted with (names only, comma-separated)
+                <input
+                  maxLength={500}
+                  value={documentsAssisted}
+                  onChange={(e) => setDocumentsAssisted(e.target.value)}
+                />
               </label>
               <button
-                disabled={busy || !note || !performedTask.trim()}
+                disabled={busy || !note || !performedTask.trim() || !performedServices.length}
                 onClick={() =>
                   void action('submit_outcome', {
-                    services_performed: [b.category],
-                    documents_assisted: [],
+                    services_performed: performedServices,
+                    documents_assisted: documentsAssisted
+                      .split(',')
+                      .map((v) => v.trim())
+                      .filter(Boolean),
                     task_checklist: [performedTask.trim()],
                   })
                 }
@@ -638,10 +1045,18 @@ export function SevaRequestDetail() {
           )}
           {owner && (
             <>
-              <button disabled={busy || !confirmed} onClick={() => void action('cancel')}>
+              <button
+                disabled={busy || !confirmed || !canChangeSchedule}
+                onClick={() => void action('cancel')}
+              >
                 Cancel my request
               </button>
-              <button disabled={busy} onClick={() => void action('citizen_confirm')}>
+              <button
+                disabled={
+                  busy || !['completion_pending_review', 'visit_completed'].includes(b.stage)
+                }
+                onClick={() => void action('citizen_confirm')}
+              >
                 Confirm I received this assistance
               </button>
             </>
@@ -667,7 +1082,7 @@ export function SevaRequestDetail() {
               </label>
             </div>
             <button
-              disabled={busy || !start || !end || !confirmed}
+              disabled={busy || !start || !end || !confirmed || !canChangeSchedule}
               onClick={() =>
                 void action('reschedule', { window: { start: iso(start), end: iso(end) } })
               }
@@ -679,6 +1094,14 @@ export function SevaRequestDetail() {
         {staff && (
           <>
             <h3>Eligible-worker shortlist</h3>
+            <label>
+              Reason for choosing a lower ranked eligible worker (if applicable)
+              <input
+                maxLength={400}
+                value={overrideReason}
+                onChange={(e) => setOverrideReason(e.target.value)}
+              />
+            </label>
             <p>
               Use the guidance button to load actual candidates for the preferred window. No
               candidate is automatically booked.
@@ -708,6 +1131,7 @@ export function SevaRequestDetail() {
                     await privateApi<Booking>(token, `/seva/requests/${id}/assignment`, {
                       revision: b.revision,
                       worker_id: selected,
+                      override_reason: overrideReason,
                       window: b.preferred_window,
                       confirmed,
                       note,
@@ -743,7 +1167,7 @@ export function SevaRequestDetail() {
           </p>
         </section>
       )}
-      {owner && (
+      {owner && ['visit_completed', 'follow_up_required', 'closed'].includes(b.stage) && (
         <section className="panel">
           <h2>Feedback & follow-up</h2>
           <label>
@@ -768,7 +1192,7 @@ export function SevaRequestDetail() {
             />
           </label>
           <button
-            disabled={busy || !followup}
+            disabled={busy || !followup || b.stage !== 'visit_completed'}
             onClick={() => void action('request_followup', { followup_at: iso(followup) })}
           >
             Request follow-up after completion
@@ -803,6 +1227,7 @@ export function SevaRequestDetail() {
             </div>
           ))}
       </section>
+      {owner && <BookingPreferenceForm booking={b} onSave={setBooking} />}
       <section className="panel">
         <h2>Request activity timeline</h2>
         <ol>
@@ -869,6 +1294,34 @@ export function SevaWorkerProfile() {
           {profile.availability.map((s, i) => (
             <p key={i}>
               {time(s.start)}–{time(s.end)}
+              <button
+                disabled={busy}
+                onClick={async () => {
+                  if (
+                    !window.confirm(
+                      'Remove this declared availability window? Reserved visits must be resolved first.',
+                    )
+                  )
+                    return;
+                  setBusy(true);
+                  try {
+                    setProfile(
+                      await privateApi<Worker>(token, `/seva/workers/${user.id}/availability`, {
+                        revision: profile.revision,
+                        slots: profile.availability.filter((_, index) => index !== i),
+                        note: 'Worker removed declared availability',
+                      }),
+                    );
+                    setError('');
+                  } catch (e) {
+                    setError((e as Error).message);
+                  } finally {
+                    setBusy(false);
+                  }
+                }}
+              >
+                Remove availability window
+              </button>
             </p>
           ))}
           <form
@@ -911,6 +1364,7 @@ export function SevaWorkerProfile() {
             </label>
             <button disabled={busy}>Add declared availability window</button>
           </form>
+          <WorkerProfileEditor profile={profile} onSave={setProfile} />
         </section>
       ) : (
         missing && (
@@ -1009,12 +1463,19 @@ export function SevaWorkers() {
   const [note, setNote] = useState('');
   const [expiry, setExpiry] = useState('');
   const [confirmed, setConfirmed] = useState(false);
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
+  const [statusFilter, setStatusFilter] = useState('');
+  const [evidence, setEvidence] = useState('');
   useEffect(() => {
     if (user)
-      void privateApi<Page<Worker>>(token, '/seva/workers')
-        .then((r) => setRows(r.items))
+      void privateApi<Page<Worker>>(token, `/seva/workers?page=${page}&status=${statusFilter}`)
+        .then((r) => {
+          setRows(r.items);
+          setTotal(r.total);
+        })
         .catch((e) => setError(e.message));
-  }, [user, token]);
+  }, [user, token, page, statusFilter]);
   if (!user) return <AccessGate />;
   return (
     <>
@@ -1025,6 +1486,29 @@ export function SevaWorkers() {
           administrators can approve verification.
         </p>
       </header>
+      <label>
+        Verification filter
+        <select
+          value={statusFilter}
+          onChange={(e) => {
+            setStatusFilter(e.target.value);
+            setPage(1);
+          }}
+        >
+          {[
+            '',
+            'pending_verification',
+            'verified_internally',
+            'authorization_confirmed',
+            'suspended',
+            'expired',
+          ].map((s) => (
+            <option key={s} value={s}>
+              {s ? readable(s) : 'All workers'}
+            </option>
+          ))}
+        </select>
+      </label>
       {error && (
         <p className="error" role="alert">
           {error}
@@ -1035,6 +1519,10 @@ export function SevaWorkers() {
           <label>
             Verification review note
             <textarea value={note} maxLength={600} onChange={(e) => setNote(e.target.value)} />
+          </label>
+          <label>
+            Reviewed authorization evidence URL (required for authorization confirmed)
+            <input type="url" value={evidence} onChange={(e) => setEvidence(e.target.value)} />
           </label>
           <label>
             Verification expiry (local time)
@@ -1068,33 +1556,38 @@ export function SevaWorkers() {
             ))}
             {user.role === 'admin' && (
               <div className="quick-actions">
-                {['verified_internally', 'suspended', 'expired'].map((status) => (
-                  <button
-                    disabled={!note || !confirmed || (status === 'verified_internally' && !expiry)}
-                    key={status}
-                    onClick={async () => {
-                      try {
-                        const updated = await privateApi<Worker>(
-                          token,
-                          `/seva/workers/${w.id}/verification`,
-                          {
-                            revision: w.revision,
-                            status,
-                            note,
-                            confirmed,
-                            expires_at: expiry ? iso(expiry) : null,
-                          },
-                        );
-                        setRows((r) => r.map((old) => (old.id === w.id ? updated : old)));
-                        setConfirmed(false);
-                      } catch (e) {
-                        setError((e as Error).message);
+                {['verified_internally', 'authorization_confirmed', 'suspended', 'expired'].map(
+                  (status) => (
+                    <button
+                      disabled={
+                        !note || !confirmed || (status === 'verified_internally' && !expiry)
                       }
-                    }}
-                  >
-                    {readable(status)}
-                  </button>
-                ))}
+                      key={status}
+                      onClick={async () => {
+                        try {
+                          const updated = await privateApi<Worker>(
+                            token,
+                            `/seva/workers/${w.id}/verification`,
+                            {
+                              revision: w.revision,
+                              status,
+                              note,
+                              confirmed,
+                              evidence_url: evidence || null,
+                              expires_at: expiry ? iso(expiry) : null,
+                            },
+                          );
+                          setRows((r) => r.map((old) => (old.id === w.id ? updated : old)));
+                          setConfirmed(false);
+                        } catch (e) {
+                          setError((e as Error).message);
+                        }
+                      }}
+                    >
+                      {readable(status)}
+                    </button>
+                  ),
+                )}
               </div>
             )}
           </article>
@@ -1103,6 +1596,18 @@ export function SevaWorkers() {
       {rows.length === 0 && (
         <p>No worker profiles available. Workers must submit their profiles before verification.</p>
       )}
+      <div className="row">
+        <button disabled={page === 1} onClick={() => setPage((v) => v - 1)}>
+          Previous workers
+        </button>
+        <span>
+          Page {page}, {total} workers
+        </span>
+        <button disabled={page * 20 >= total} onClick={() => setPage((v) => v + 1)}>
+          Next workers
+        </button>
+      </div>
+      <OrganizationManager />
     </>
   );
 }

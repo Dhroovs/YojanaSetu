@@ -23,6 +23,11 @@ class Settings(BaseSettings):
     model_base_url: str = "http://127.0.0.1:11434"
     model_api_key: str = ""
     model_timeout_seconds: float = Field(default=45, ge=1, le=300)
+    llm_max_output_tokens: int = Field(default=512, ge=32, le=2048)
+    llm_max_input_chars: int = Field(default=16000, ge=1000, le=64000)
+    llm_max_output_chars: int = Field(default=16000, ge=256, le=64000)
+    llm_retry_limit: int = Field(default=1, ge=0, le=2)
+    allow_hosted_llm: bool = False
     ai_timeout_seconds: float = Field(default=90, ge=1, le=600)
     retrieval_top_k: int = Field(default=8, ge=1, le=30)
     retrieval_max_distance: float = Field(default=0.65, ge=0, le=2)
@@ -45,3 +50,4 @@ class Settings(BaseSettings):
     escalation_reopen_hours: int = Field(default=24, ge=1, le=168)
     seva_notification_interval_hours: int = Field(default=1, ge=1, le=24)
     seva_retention_days: int = Field(default=180, ge=1, le=3650)
+    seva_requests_per_minute: int = Field(default=120, ge=1, le=1000)

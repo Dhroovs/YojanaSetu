@@ -231,7 +231,18 @@ class CaseOrchestrator:
         return self.step(state, "persist_permitted_changes", case=case)
 
     async def respond(self, state):
-        return self.step(state, "respond")
+        from app.ai.providers import LanguageModel
+
+        case = state["case"]
+        summary = await LanguageModel(self.service.settings).grounded_summary(
+            [
+                f"Internal case stage: {case.stage.value}.",
+                f"Document checklist has {len(case.checklist)} items.",
+                state["result"].get("next_action", "Review the authorized assistance record."),
+                "This record is not a government approval or KYC result.",
+            ]
+        )
+        return self.step(state, "respond", result={**state["result"], "grounded_summary": summary})
 
     async def run(self, case_id, actor, body, key):
         with tracing_context(enabled=False):

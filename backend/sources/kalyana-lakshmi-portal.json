@@ -1,0 +1,20 @@
+{
+  "source_id": "kalyana-lakshmi-epass",
+  "scheme_id": "kalyana-lakshmi",
+  "scheme_name": "Kalyana Lakshmi Pathakam",
+  "department": "Government of Telangana, ePASS portal",
+  "scope": "state",
+  "geographic_coverage": ["Telangana"],
+  "category": "Social welfare",
+  "official_url": "https://telanganaepass.cgg.gov.in/KalyanaLakshmiLinks.jsp",
+  "document_title": "Kalyana Lakshmi Pathakam services and category-specific income information",
+  "published_at": null,
+  "reviewed_at": "2026-11-23",
+  "verification_status": "verified",
+  "completeness": "partial",
+  "application_url": "https://telanganaepass.cgg.gov.in/KalyanLakshmi.do",
+  "application_url_reviewed_at": "2026-11-23",
+  "application_url_review_note": "Followed the official portal Registration link and inspected the public registration form with GET only; no citizen data entered or submitted.",
+  "rules": [],
+  "field_evidence": {"application_url": "Application Registration for Kalyana Lakshmi Pathakam"}
+}

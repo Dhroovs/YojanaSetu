@@ -1,5 +1,8 @@
 # Phase 4 paused checkpoint — 23 November 2026
 
+Historical pause record. Work later resumed at the user's request; see
+[Phase 4 completion](phase4-completion.md) for current status and results.
+
 User requested a pause during final verification. Stop feature implementation here;
 resume only when the user returns. Phase 4 is **partial**, not production-ready.
 No deployment, push, purchase or paid model call was made.

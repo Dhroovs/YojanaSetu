@@ -132,10 +132,14 @@ async def process_due(service, now=None, limit=100):
             if booking.get("outcome"):
                 booking["outcome"]["note"] = "Removed under retention policy"
                 booking["outcome"]["documents_assisted"] = []
+                booking["outcome"]["task_checklist"] = []
+                booking["outcome"].pop("review_note", None)
             if booking.get("feedback"):
                 booking["feedback"]["note"] = "Removed under retention policy"
             for event in booking["audit"]:
                 event["note"] = "Removed under retention policy"
+            for escalation in booking["escalations"]:
+                escalation.pop("resolution_note", None)
         pending = [
             n["due_at"]
             for n in booking["notifications"]

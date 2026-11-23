@@ -105,6 +105,8 @@ class SourceManifest(StrictModel):
     benefits: list[str] | None = None
     application_process: list[str] | None = None
     application_url: HttpUrl | None = None
+    application_url_reviewed_at: date | None = None
+    application_url_review_note: str | None = Field(default=None, max_length=500)
     rules: list[Rule] = Field(default_factory=list)
     field_evidence: dict[str, str] = Field(default_factory=dict)
 

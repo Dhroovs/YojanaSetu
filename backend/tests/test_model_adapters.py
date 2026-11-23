@@ -26,7 +26,7 @@ def test_model_json_protocols(monkeypatch, provider, path):
         "app.ai.providers.httpx.AsyncClient",
         lambda **kw: original(transport=httpx.MockTransport(handle), **kw),
     )
-    model = LanguageModel(Settings(_env_file=None, llm_provider=provider))
+    model = LanguageModel(Settings(_env_file=None, llm_provider=provider, allow_hosted_llm=True))
     assert asyncio.run(model.json("System instruction", {"question": "untrusted"})) == {
         "chunk_ids": ["a"]
     }

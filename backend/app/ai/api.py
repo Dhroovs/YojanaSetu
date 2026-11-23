@@ -87,6 +87,19 @@ def make_router(settings, dev_access):
     async def chat(body: MatchRequest, request: Request, session_key=Depends(authorize)):
         return await run(body, request, session_key)
 
+    @router.get("/coverage")
+    async def coverage(request: Request):
+        from app.ai.quality import coverage_report
+
+        if not hasattr(request.app.state.repository, "database"):
+            return coverage_report([])
+        rows = await request.app.state.repository.database.ai_sources.find(
+            {"verification_status": "verified"}, {"_id": 0}
+        ).to_list(1000)
+        return coverage_report(
+            [SourceRecord.model_validate(r) for r in rows], settings.source_max_age_days
+        )
+
     @router.get("/schemes/{scheme_id}/sources", response_model=list[SourceRecord])
     async def sources(scheme_id: str, request: Request):
         # Only reviewed scheme source metadata is public. No profiles or conversations.

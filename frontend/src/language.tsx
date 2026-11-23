@@ -40,7 +40,9 @@ export const dictionaries: Record<string, Record<Key, string>> = {
 };
 const Context = createContext({
   language: 'en',
-  setLanguage: (value: string) => { void value; },
+  setLanguage: (value: string) => {
+    void value;
+  },
   t: (key: Key) => en[key],
 });
 export function LanguageProvider({ children }: { children: ReactNode }) {

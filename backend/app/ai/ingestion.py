@@ -153,6 +153,8 @@ async def ingest(
             raise ValueError("Verified sources cannot replace demo schemes")
         if manifest.application_url:
             official_url(str(manifest.application_url))
+            if not manifest.application_url_reviewed_at or not manifest.application_url_review_note:
+                raise ValueError("Application URLs require a dated manual link review and note")
     pages = extract(data, kind, settings.ingestion_max_bytes, settings.ingestion_max_pages)
     if manifest.verification_status == "verified" and any(
         "synthetic test document" in text.casefold() for _, text in pages
