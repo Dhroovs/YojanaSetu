@@ -8,6 +8,14 @@ import { Assistant, Match, MatchCard } from './assistant';
 import { SourceList } from './source-list';
 import { AuthProvider, SignIn, useAuth } from './auth';
 import { PrivateCasePage, PrivateDashboard } from './private-cases';
+import {
+  SevaDashboard,
+  SevaRequestDetail,
+  SevaRequestForm,
+  SevaWorkerProfile,
+  SevaWorkers,
+} from './seva';
+import { LanguageProvider, useLanguage } from './language';
 
 function Home() {
   return (
@@ -503,7 +511,7 @@ function Doorstep() {
 }
 function App() {
   const { user } = useAuth();
-  const [language, setLanguage] = useState('en');
+  const { language, setLanguage, t } = useLanguage();
   const [matches, setMatches] = useState<Match[]>([]);
   return (
     <>
@@ -521,12 +529,12 @@ function App() {
           Yojana<span>Setu</span>
         </Link>
         <nav aria-label="Main navigation">
-          <NavLink to="/schemes">Discover</NavLink>
-          <NavLink to="/assistant">Scheme assistant</NavLink>
-          <NavLink to="/dashboard">My assistance</NavLink>
-          <NavLink to="/tracking">Track case</NavLink>
-          <NavLink to="/doorstep">SevaSetu</NavLink>
-          <NavLink to="/login">{user ? 'My account' : 'Sign in'}</NavLink>
+          <NavLink to="/schemes">{t('discover')}</NavLink>
+          <NavLink to="/assistant">{t('assistant')}</NavLink>
+          <NavLink to="/dashboard">{t('assistance')}</NavLink>
+          <NavLink to="/tracking">{t('tracking')}</NavLink>
+          <NavLink to="/doorstep">{t('doorstep')}</NavLink>
+          <NavLink to="/login">{user ? t('account') : t('signIn')}</NavLink>
         </nav>
         <label className="language">
           <span className="sr-only">Language preview</span>
@@ -543,7 +551,7 @@ function App() {
           Translation is not connected; content remains in English.
         </p>
       )}
-      <main id="main">
+      <main id="main" lang="en">
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/schemes" element={<Schemes />} />
@@ -551,7 +559,12 @@ function App() {
           <Route path="/dashboard" element={<Dashboard matches={matches} />} />
           <Route path="/assistant" element={<Assistant onMatches={setMatches} />} />
           <Route path="/tracking" element={<Tracking />} />
-          <Route path="/doorstep" element={<Doorstep />} />
+          <Route path="/doorstep" element={user ? <SevaDashboard /> : <Doorstep />} />
+          <Route path="/seva" element={<SevaDashboard />} />
+          <Route path="/seva/new" element={<SevaRequestForm />} />
+          <Route path="/seva/requests/:id" element={<SevaRequestDetail />} />
+          <Route path="/seva/profile" element={<SevaWorkerProfile />} />
+          <Route path="/seva/workers" element={<SevaWorkers />} />
           <Route path="/login" element={<SignIn />} />
           <Route path="/my-cases/:id" element={<PrivateCasePage />} />
           <Route path="/coordinator" element={<PrivateDashboard coordinator />} />
@@ -584,9 +597,11 @@ function App() {
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <BrowserRouter>
-      <AuthProvider>
-        <App />
-      </AuthProvider>
+      <LanguageProvider>
+        <AuthProvider>
+          <App />
+        </AuthProvider>
+      </LanguageProvider>
     </BrowserRouter>
   </React.StrictMode>,
 );

@@ -91,7 +91,9 @@ def create_app(
     @app.middleware("http")
     async def private_no_cache(request, call_next):
         response = await call_next(request)
-        if request.url.path.startswith(("/api/auth", "/api/cases", "/api/coordinator")):
+        if request.url.path.startswith(
+            ("/api/auth", "/api/cases", "/api/coordinator", "/api/seva")
+        ):
             response.headers["Cache-Control"] = "no-store"
         return response
 
@@ -118,6 +120,9 @@ def create_app(
 
     app.include_router(make_auth_router(settings))
     app.include_router(make_case_router())
+    from app.seva.api import make_router as make_seva_router
+
+    app.include_router(make_seva_router())
 
     @app.get("/api/health")
     async def health(repository=Depends(repo)):

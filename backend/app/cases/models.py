@@ -215,10 +215,11 @@ class EscalationChange(Change):
 
 class AssistanceRequest(Change):
     question: str = Field(min_length=3, max_length=500)
-    intent: Literal["auto", "documents", "followup", "escalation", "status", "scheme_match"] = (
-        "auto"
-    )
+    intent: Literal[
+        "auto", "documents", "followup", "escalation", "status", "scheme_match", "doorstep"
+    ] = "auto"
     apply_changes: bool = False
+    doorstep_request_id: str | None = Field(default=None, max_length=80)
     scheme_conversation_id: str | None = Field(default=None, pattern=r"^[A-Za-z0-9_-]{40,100}$")
 
 

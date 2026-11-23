@@ -331,6 +331,7 @@ def make_case_router():
     ):
         from app.agents.case_orchestrator import CaseOrchestrator
         from app.ai.runtime import matcher_service
+        from app.seva.runtime import seva_service
 
         runtime = await private_runtime(request)
         async with asyncio.timeout(request.app.state.settings.ai_timeout_seconds):
@@ -338,6 +339,7 @@ def make_case_router():
                 runtime.cases,
                 lambda: matcher_service(request),
                 hashlib.sha256(request.headers["authorization"].encode()).hexdigest(),
+                lambda: seva_service(request),
             ).run(case_id, actor, body, idempotency_key)
 
     return router

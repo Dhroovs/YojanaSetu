@@ -43,3 +43,5 @@ class Settings(BaseSettings):
     document_review_escalation_hours: int = Field(default=48, ge=1, le=720)
     missing_document_reminder_limit: int = Field(default=3, ge=1, le=20)
     escalation_reopen_hours: int = Field(default=24, ge=1, le=168)
+    seva_notification_interval_hours: int = Field(default=1, ge=1, le=24)
+    seva_retention_days: int = Field(default=180, ge=1, le=3650)

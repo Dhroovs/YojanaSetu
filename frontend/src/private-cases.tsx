@@ -140,6 +140,11 @@ export function PrivateDashboard({ coordinator = false }: { coordinator?: boolea
         <h1>{coordinator ? 'Coordinator assistance queue' : 'My private assistance cases'}</h1>
         <p>Internal support tasks only. “Completed” never means government approval.</p>
       </header>
+      <p>
+        <Link className="button" to="/seva">
+          Open SevaSetu doorstep assistance →
+        </Link>
+      </p>
       {user.role === 'citizen' && !coordinator && (
         <form
           className="panel"
@@ -435,6 +440,9 @@ export function PrivateCasePage() {
       {busy && <p role="status">Saving assistance update…</p>}
       <section className="panel">
         <h2>Next steps & case assistant</h2>
+        <Link className="text-link" to={`/seva/new?case=${c.id}&scheme=${c.scheme_id}`}>
+          Request consent-based doorstep help for this case →
+        </Link>
         {c.missing_information.map((m) => (
           <p key={m} className="notice">
             {m}

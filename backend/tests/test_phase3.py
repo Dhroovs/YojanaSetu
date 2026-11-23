@@ -384,6 +384,7 @@ def test_durable_worker_prevents_duplicate_reminders(service):
         ("When is my next follow-up?", "auto", "follow_up"),
         ("What is happening with my case?", "auto", "case_status"),
         ("I need a human coordinator", "auto", "escalation"),
+        ("I need a doorstep home visit", "auto", "doorstep_coordinator"),
     ],
 )
 def test_langgraph_case_routing_read_only(service, question, intent, node):

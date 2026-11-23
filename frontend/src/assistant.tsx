@@ -84,6 +84,11 @@ export function MatchCard({ match }: { match: Match }) {
       <Link className="text-link" to={`/schemes/${match.scheme_id}`}>
         View scheme details →
       </Link>
+      <p>
+        <Link className="text-link" to={`/seva/new?scheme=${match.scheme_id}`}>
+          Explore in-person assistance for this scheme →
+        </Link>
+      </p>
     </article>
   );
 }

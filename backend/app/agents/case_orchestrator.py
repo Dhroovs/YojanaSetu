@@ -25,8 +25,9 @@ class CaseGraphState(TypedDict, total=False):
 class CaseOrchestrator:
     """Bounded case tasks. Model/document text can never select arbitrary tools or mutations."""
 
-    def __init__(self, service, matcher_factory=None, matcher_session_key=None):
+    def __init__(self, service, matcher_factory=None, matcher_session_key=None, seva_factory=None):
         self.service, self.matcher_factory = service, matcher_factory
+        self.seva_factory = seva_factory
         self.matcher_session_key = matcher_session_key or secrets.token_urlsafe(32)
         graph = StateGraph(CaseGraphState)
         for name in (
@@ -37,6 +38,7 @@ class CaseOrchestrator:
             "escalation",
             "status",
             "scheme_match",
+            "doorstep",
             "validate_result",
             "persist",
             "respond",
@@ -49,10 +51,17 @@ class CaseOrchestrator:
             lambda s: s["intent"],
             {
                 name: name
-                for name in ("documents", "followup", "escalation", "status", "scheme_match")
+                for name in (
+                    "documents",
+                    "followup",
+                    "escalation",
+                    "status",
+                    "scheme_match",
+                    "doorstep",
+                )
             },
         )
-        for name in ("documents", "followup", "escalation", "status", "scheme_match"):
+        for name in ("documents", "followup", "escalation", "status", "scheme_match", "doorstep"):
             graph.add_edge(name, "validate_result")
         graph.add_edge("validate_result", "persist")
         graph.add_edge("persist", "respond")
@@ -69,7 +78,9 @@ class CaseOrchestrator:
             raise HTTPException(422, "Do not include identity or account numbers.")
         intent = body.intent
         if intent == "auto":
-            if any(word in question for word in ("coordinator", "human", "escalat", "help from")):
+            if any(word in question for word in ("doorstep", "sevasetu", "home visit")):
+                intent = "doorstep"
+            elif any(word in question for word in ("coordinator", "human", "escalat", "help from")):
                 intent = "escalation"
             elif any(word in question for word in ("document", "checklist", "upload")):
                 intent = "documents"
@@ -143,6 +154,29 @@ class CaseOrchestrator:
             },
         )
 
+    async def doorstep(self, state):
+        booking_id = state["body"].doorstep_request_id
+        result = {
+            "agent": "doorstep_coordinator",
+            "next_action": (
+                "Create a consented SevaSetu request linked to this case. No booking was created."
+            ),
+        }
+        if booking_id:
+            if self.seva_factory is None:
+                raise HTTPException(503, "Doorstep coordination is not configured.")
+            from app.agents.doorstep_coordinator import DoorstepCoordinator
+
+            service = await self.seva_factory()
+            booking = await service.authorized(booking_id, state["actor"])
+            if (
+                booking["case_id"] != state["case_id"]
+                or booking["owner_id"] != state["case"].owner_id
+            ):
+                raise HTTPException(404, "No linked doorstep request found.")
+            result.update(await DoorstepCoordinator(service).run(booking_id, state["actor"]))
+        return self.step(state, "doorstep_coordinator", result=result)
+
     async def validate_result(self, state):
         if not isinstance(state["result"], dict) or "agent" not in state["result"]:
             raise HTTPException(500, "Case workflow returned an invalid result.")
@@ -152,7 +186,7 @@ class CaseOrchestrator:
         body, actor = state["body"], state["actor"]
         if not body.apply_changes:
             return self.step(state, "read_only_no_case_mutation")
-        if state["intent"] in {"status", "scheme_match"}:
+        if state["intent"] in {"status", "scheme_match", "doorstep"}:
             raise HTTPException(422, "This intent is read-only; disable apply_changes.")
 
         async def change(case):

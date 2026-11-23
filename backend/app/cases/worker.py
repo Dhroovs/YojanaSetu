@@ -7,6 +7,9 @@ from pymongo import AsyncMongoClient
 from app.cases.automation import process_due, purge_expired
 from app.cases.runtime import PrivateRuntime
 from app.config import Settings
+from app.seva.automation import process_due as process_seva_due
+from app.seva.service import SevaService
+from app.seva.store import SevaStore
 
 
 async def run(args):
@@ -16,16 +19,23 @@ async def run(args):
     ) as client:
         runtime = PrivateRuntime(client[settings.mongodb_database], settings)
         await runtime.initialize()
+        seva_store = SevaStore(client[settings.mongodb_database])
+        await seva_store.initialize()
+        seva = SevaService(seva_store, runtime.cases, runtime.auth, settings)
         while True:
             try:
                 count = await process_due(runtime.cases, limit=args.limit)
+                visits = await process_seva_due(seva, limit=args.limit)
                 purged = (
                     await purge_expired(runtime.cases, limit=args.limit)
                     if args.purge_expired
                     else 0
                 )
                 logging.info(
-                    "Durable case sweep processed=%s retention_processed=%s", count, purged
+                    "Durable case sweep processed=%s retention_processed=%s visits=%s",
+                    count,
+                    purged,
+                    visits,
                 )
             except Exception as exc:
                 logging.error(
