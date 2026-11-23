@@ -1,3 +1,4 @@
+import { useLanguage } from './language';
 import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { api, Scheme } from './api';
@@ -47,12 +48,19 @@ export interface PrivateCase {
     acknowledged_by: string[];
     created_at: string;
   }[];
+  notices?: {
+    id: string;
+    action: string;
+    message: string | null;
+    delivered_at: string | null;
+    acknowledged_by: string[];
+  }[];
   escalations: Referral[];
   activity: { id: string; action: string; note: string; at: string }[];
   missing_information: string[];
   coordinator_id: string | null;
   worker_ids: string[];
-  preferences: { in_app: boolean; quiet_start: number; quiet_end: number };
+  preferences: { in_app: boolean; quiet_start: number; quiet_end: number; language?: string };
   scheme_source_versions: Record<string, string>;
 }
 interface Page<T> {
@@ -75,21 +83,26 @@ const stages = [
 ];
 
 export function AccessGate() {
+  const { tr } = useLanguage();
+
   return (
     <section className="panel">
-      <h1>Private assistance workspace</h1>
+      <h1>{tr('Private assistance workspace')}</h1>
       <p>
-        Sign in with a provisioned account to access your authorized cases. Official government
-        status integrations are not connected.
+        {tr(
+          'Sign in with a provisioned account to access your authorized cases. Official government status integrations are not connected.',
+        )}
       </p>
       <Link className="button" to="/login">
-        Sign in
+        {tr('Sign in')}
       </Link>
     </section>
   );
 }
 
 export function PrivateDashboard({ coordinator = false }: { coordinator?: boolean }) {
+  const { tr } = useLanguage();
+
   const { user, token } = useAuth();
   const navigate = useNavigate();
   const [page, setPage] = useState(1);
@@ -131,18 +144,24 @@ export function PrivateDashboard({ coordinator = false }: { coordinator?: boolea
   if (!user) return <AccessGate />;
   if (coordinator && user.role === 'citizen')
     return (
-      <p role="alert">This workspace requires an assigned worker, coordinator or admin account.</p>
+      <p role="alert">
+        {tr('This workspace requires an assigned worker, coordinator or admin account.')}
+      </p>
     );
   return (
     <>
       <header className="page-title">
-        <div className="eyebrow">{user.role} WORKSPACE</div>
-        <h1>{coordinator ? 'Coordinator assistance queue' : 'My private assistance cases'}</h1>
-        <p>Internal support tasks only. “Completed” never means government approval.</p>
+        <div className="eyebrow">
+          {user.role} {tr(' WORKSPACE')}
+        </div>
+        <h1>
+          {coordinator ? tr('Coordinator assistance queue') : tr('My private assistance cases')}
+        </h1>
+        <p>{tr('Internal support tasks only. “Completed” never means government approval.')}</p>
       </header>
       <p>
         <Link className="button" to="/seva">
-          Open SevaSetu doorstep assistance →
+          {tr('Open SevaSetu doorstep assistance →')}
         </Link>
       </p>
       {user.role === 'citizen' && !coordinator && (
@@ -170,9 +189,9 @@ export function PrivateDashboard({ coordinator = false }: { coordinator?: boolea
             }
           }}
         >
-          <h2>Begin an assistance case</h2>
+          <h2>{tr('Begin an assistance case')}</h2>
           <label>
-            Scheme
+            {tr('Scheme')}
             <select
               required
               value={scheme}
@@ -181,26 +200,27 @@ export function PrivateDashboard({ coordinator = false }: { coordinator?: boolea
                 creationKey.current = crypto.randomUUID();
               }}
             >
-              <option value="">Choose a scheme</option>
+              <option value="">{tr('Choose a scheme')}</option>
               {schemes.map((s) => (
                 <option key={s.id} value={s.id}>
                   {s.title}
-                  {s.is_demo ? ' · fictional demo' : ' · reviewed official source'}
+                  {s.is_demo ? tr(' · fictional demo') : tr(' · reviewed official source')}
                 </option>
               ))}
             </select>
           </label>
-          <button disabled={busy}>{busy ? 'Creating…' : 'Create my case'}</button>
+          <button disabled={busy}>{busy ? tr('Creating…') : tr('Create my case')}</button>
           <p>
-            Missing source requirements remain unknown; the assistant will ask a coordinator to
-            review them.
+            {tr(
+              'Missing source requirements remain unknown; the assistant will ask a coordinator to review them.',
+            )}
           </p>
         </form>
       )}
       <div className="row">
         {coordinator && (
           <label>
-            Queue
+            {tr('Queue')}
             <select
               value={kind}
               onChange={(e) => {
@@ -216,14 +236,14 @@ export function PrivateDashboard({ coordinator = false }: { coordinator?: boolea
                 ...(user.role === 'worker' ? [] : ['unassigned']),
               ].map((k) => (
                 <option key={k} value={k}>
-                  {human(k)}
+                  {tr(human(k))}
                 </option>
               ))}
             </select>
           </label>
         )}
         <button className="secondary" onClick={() => setRefresh((n) => n + 1)}>
-          Refresh cases
+          {tr('Refresh cases')}
         </button>
       </div>
       {error && (
@@ -231,16 +251,21 @@ export function PrivateDashboard({ coordinator = false }: { coordinator?: boolea
           {error}
         </p>
       )}
-      {!result && !error && <p role="status">Loading authorized cases…</p>}
+      {!result && !error && <p role="status">{tr('Loading authorized cases…')}</p>}
       {result && (
         <>
-          <p>{result.total} case(s)</p>
+          <p>
+            {result.total} {tr(' case(s)')}
+          </p>
           <div className="grid">
             {result.items.map((c) => (
               <article className="card" key={c.id}>
-                <div className="eyebrow">{human(c.stage)}</div>
+                <div className="eyebrow">{tr(human(c.stage))}</div>
                 <h2>{c.scheme_id}</h2>
-                <p className="small">Reference {c.id}</p>
+                <p className="small">
+                  {tr('Reference ')}
+                  {c.id}
+                </p>
                 {kind === 'unassigned' ? (
                   <button
                     disabled={busy}
@@ -268,24 +293,27 @@ export function PrivateDashboard({ coordinator = false }: { coordinator?: boolea
                       }
                     }}
                   >
-                    Claim case with confirmation
+                    {tr('Claim case with confirmation')}
                   </button>
                 ) : (
                   <Link className="text-link" to={`/my-cases/${c.id}`}>
-                    Open authorized case →
+                    {tr('Open authorized case →')}
                   </Link>
                 )}
               </article>
             ))}
           </div>
-          {result.items.length === 0 && <p>No cases in this queue.</p>}
+          {result.items.length === 0 && <p>{tr('No cases in this queue.')}</p>}
           <div className="row pagination">
             <button disabled={page === 1} onClick={() => setPage((n) => n - 1)}>
-              Previous
+              {tr('Previous')}
             </button>
-            <span>Page {page}</span>
+            <span>
+              {tr('Page ')}
+              {page}
+            </span>
             <button disabled={page * 20 >= result.total} onClick={() => setPage((n) => n + 1)}>
-              Next
+              {tr('Next')}
             </button>
           </div>
         </>
@@ -295,6 +323,8 @@ export function PrivateDashboard({ coordinator = false }: { coordinator?: boolea
 }
 
 export function PrivateCasePage() {
+  const { tr } = useLanguage();
+
   const { id } = useParams();
   const { user, token } = useAuth();
   const [record, setRecord] = useState<PrivateCase>();
@@ -410,7 +440,7 @@ export function PrivateCasePage() {
             {error}
           </p>
         ) : (
-          <p role="status">Loading private assistance case…</p>
+          <p role="status">{tr('Loading private assistance case…')}</p>
         )}
       </>
     );
@@ -419,29 +449,34 @@ export function PrivateCasePage() {
     <>
       <header className="page-title">
         <div className="eyebrow">
-          PRIVATE ASSISTANCE · {c.is_demo ? 'FICTIONAL DEMO' : 'SOURCE-BASED CASE'}
+          {tr('PRIVATE ASSISTANCE · ')}
+          {c.is_demo ? tr('FICTIONAL DEMO') : tr('SOURCE-BASED CASE')}
         </div>
         <h1>{c.scheme_id}</h1>
-        <p>Reference {c.id}</p>
-        <p className="status-chip">{human(c.stage)}</p>
         <p>
-          Internal completion is not official government approval, legal document authentication or
-          KYC.
+          {tr('Reference ')}
+          {c.id}
+        </p>
+        <p className="status-chip">{tr(human(c.stage))}</p>
+        <p>
+          {tr(
+            'Internal completion is not official government approval, legal document authentication or KYC.',
+          )}
         </p>
       </header>
       <button className="secondary" disabled={busy} onClick={() => void load()}>
-        Refresh case
+        {tr('Refresh case')}
       </button>
       {error && (
         <p className="error" role="alert">
           {error}
         </p>
       )}
-      {busy && <p role="status">Saving assistance update…</p>}
+      {busy && <p role="status">{tr('Saving assistance update…')}</p>}
       <section className="panel">
-        <h2>Next steps & case assistant</h2>
+        <h2>{tr('Next steps & case assistant')}</h2>
         <Link className="text-link" to={`/seva/new?case=${c.id}&scheme=${c.scheme_id}`}>
-          Request consent-based doorstep help for this case →
+          {tr('Request consent-based doorstep help for this case →')}
         </Link>
         {c.missing_information.map((m) => (
           <p key={m} className="notice">
@@ -455,7 +490,7 @@ export function PrivateCasePage() {
             ['When is my next follow-up?', 'followup'],
           ].map(([q, i]) => (
             <button className="secondary" disabled={busy} key={i} onClick={() => void assist(q, i)}>
-              {q}
+              {tr(q)}
             </button>
           ))}
           <button
@@ -464,7 +499,7 @@ export function PrivateCasePage() {
               void assist('Please request help from a human coordinator', 'escalation', true)
             }
           >
-            Request human assistance
+            {tr('Request human assistance')}
           </button>
         </div>
         <form
@@ -474,7 +509,7 @@ export function PrivateCasePage() {
           }}
         >
           <label>
-            Ask about this authorized case
+            {tr('Ask about this authorized case')}
             <textarea
               value={question}
               onChange={(e) => setQuestion(e.target.value)}
@@ -483,23 +518,28 @@ export function PrivateCasePage() {
               required
             />
           </label>
-          <button disabled={busy}>Ask case assistant</button>
+          <button disabled={busy}>{tr('Ask case assistant')}</button>
         </form>
         {answer && (
           <div className="case-answer" aria-live="polite">
-            <h3>From your case record</h3>
+            <h3>{tr('From your case record')}</h3>
             {typeof answer.next_action === 'string' && <p>{answer.next_action}</p>}
-            {typeof answer.stage === 'string' && <p>Stage: {human(answer.stage)}</p>}
+            {typeof answer.stage === 'string' && (
+              <p>
+                {tr('Stage: ')}
+                {tr(human(answer.stage))}
+              </p>
+            )}
             {typeof answer.official_status === 'string' && <p>{answer.official_status}</p>}
             {Array.isArray(answer.items) &&
               answer.items.map((i: { id: string; label: string; status: string }) => (
                 <p key={i.id}>
-                  {i.label}: {human(i.status)}
+                  {i.label}: {tr(human(i.status))}
                 </p>
               ))}
             {answer.next_follow_up && typeof answer.next_follow_up === 'object' ? (
               <p>
-                Next follow-up:{' '}
+                {tr('Next follow-up:')}{' '}
                 {new Date((answer.next_follow_up as Follow).due_at).toLocaleString()}
               </p>
             ) : null}
@@ -512,15 +552,17 @@ export function PrivateCasePage() {
         )}
       </section>
       <section>
-        <h2>Document assistance checklist</h2>
+        <h2>{tr('Document assistance checklist')}</h2>
         <p>
-          Use redacted or synthetic documents only. Technical quality checks never establish
-          identity or authenticity.
+          {tr(
+            'Use redacted or synthetic documents only. Technical quality checks never establish identity or authenticity.',
+          )}
         </p>
         {!c.checklist_verified && (
           <p className="notice">
-            This checklist is not verified for an official scheme. A coordinator must review the
-            source requirements before accepting it.
+            {tr(
+              'This checklist is not verified for an official scheme. A coordinator must review the source requirements before accepting it.',
+            )}
           </p>
         )}
         <div className="grid">
@@ -528,24 +570,34 @@ export function PrivateCasePage() {
             <article className="card" key={i.id}>
               <h3>{i.label}</h3>
               <p className="small">
-                {i.is_demo ? 'Fictional demo item' : `Source: ${i.source_ids.join(', ')}`}
+                {i.is_demo ? tr('Fictional demo item') : `Source: ${i.source_ids.join(', ')}`}
               </p>
-              {!c.documents.some((d) => d.item_id === i.id && !d.deleted_at) && <p>Missing</p>}
+              {!c.documents.some((d) => d.item_id === i.id && !d.deleted_at) && (
+                <p>{tr('Missing')}</p>
+              )}
               {c.documents
                 .filter((d) => d.item_id === i.id)
                 .map((d) => (
                   <div className="document-row" key={d.id}>
                     <p>
-                      {d.deleted_at ? 'Removed' : human(d.review_status)} ·{' '}
-                      {human(d.technical_status)}
+                      {d.deleted_at ? tr('Removed') : human(d.review_status)} ·{' '}
+                      {tr(human(d.technical_status))}
                     </p>
                     {d.technical_notes.map((n) => (
                       <p key={n} className="small">
                         {n}
                       </p>
                     ))}
-                    {d.review_note && <p>Review note: {d.review_note}</p>}
-                    <small>Retention expires {new Date(d.expires_at).toLocaleDateString()}</small>
+                    {d.review_note && (
+                      <p>
+                        {tr('Review note: ')}
+                        {d.review_note}
+                      </p>
+                    )}
+                    <small>
+                      {tr('Retention expires ')}
+                      {new Date(d.expires_at).toLocaleDateString()}
+                    </small>
                     {!d.deleted_at && (
                       <>
                         <button
@@ -558,7 +610,7 @@ export function PrivateCasePage() {
                             ).catch((e) => setError(e.message))
                           }
                         >
-                          Download securely
+                          {tr('Download securely')}
                         </button>
                         <button
                           className="secondary"
@@ -574,7 +626,7 @@ export function PrivateCasePage() {
                               });
                           }}
                         >
-                          Delete file
+                          {tr('Delete file')}
                         </button>
                         {reviewer && (
                           <div className="review-actions">
@@ -587,7 +639,7 @@ export function PrivateCasePage() {
                                 })
                               }
                             >
-                              Accept for assistance checklist
+                              {tr('Accept for assistance checklist')}
                             </button>
                             <button
                               className="secondary"
@@ -599,7 +651,7 @@ export function PrivateCasePage() {
                                 })
                               }
                             >
-                              Mark unreadable
+                              {tr('Mark unreadable')}
                             </button>
                             <button
                               className="secondary"
@@ -611,7 +663,7 @@ export function PrivateCasePage() {
                                 })
                               }
                             >
-                              Needs human review
+                              {tr('Needs human review')}
                             </button>
                           </div>
                         )}
@@ -657,7 +709,7 @@ export function PrivateCasePage() {
             }}
           >
             <label>
-              Checklist item
+              {tr('Checklist item')}
               <select
                 value={item}
                 onChange={(e) => {
@@ -666,7 +718,7 @@ export function PrivateCasePage() {
                 }}
                 required
               >
-                <option value="">Choose an item</option>
+                <option value="">{tr('Choose an item')}</option>
                 {c.checklist.map((i) => (
                   <option key={i.id} value={i.id}>
                     {i.label}
@@ -675,7 +727,7 @@ export function PrivateCasePage() {
               </select>
             </label>
             <label>
-              Synthetic or redacted file
+              {tr('Synthetic or redacted file')}
               <input
                 type="file"
                 accept="application/pdf,image/jpeg,image/png"
@@ -689,33 +741,35 @@ export function PrivateCasePage() {
             <button disabled={busy}>
               {busy && progress !== undefined
                 ? `Uploading ${progress}%`
-                : 'Upload securely / retry'}
+                : tr('Upload securely / retry')}
             </button>
             {progress !== undefined && (
-              <progress aria-label="Upload progress" value={progress} max={100} />
+              <progress aria-label={tr('Upload progress')} value={progress} max={100} />
             )}
           </form>
         )}
       </section>
       {reviewer && (
         <section className="panel">
-          <h2>Human review controls</h2>
+          <h2>{tr('Human review controls')}</h2>
           <label>
-            Review / activity note
+            {tr('Review / activity note')}
             <textarea
               value={note}
               onChange={(e) => setNote(e.target.value)}
               maxLength={600}
-              placeholder="No identity numbers, account details or personal contact information."
+              placeholder={tr(
+                'No identity numbers, account details or personal contact information.',
+              )}
             />
           </label>
           <label>
-            Assistance stage
+            {tr('Assistance stage')}
             <select value={target} onChange={(e) => setTarget(e.target.value)}>
-              <option value="">Choose next stage</option>
+              <option value="">{tr('Choose next stage')}</option>
               {stages.map((s) => (
                 <option key={s} value={s}>
-                  {human(s)}
+                  {tr(human(s))}
                 </option>
               ))}
             </select>
@@ -726,7 +780,7 @@ export function PrivateCasePage() {
               checked={confirmed}
               onChange={(e) => setConfirmed(e.target.checked)}
             />
-            I confirm this closure, reopening or reassignment.
+            {tr('I confirm this closure, reopening or reassignment.')}
           </label>
           <div className="row">
             <button
@@ -740,29 +794,29 @@ export function PrivateCasePage() {
                 })
               }
             >
-              Update internal stage
+              {tr('Update internal stage')}
             </button>
             <button
               className="secondary"
               disabled={busy || !note}
               onClick={() => void action('/flags', { note })}
             >
-              Flag conflicting information
+              {tr('Flag conflicting information')}
             </button>
             <button
               className="secondary"
               disabled={busy}
               onClick={() => void action('/checklist/refresh', { note })}
             >
-              Refresh source checklist
+              {tr('Refresh source checklist')}
             </button>
           </div>
           {user.role === 'admin' && (
             <>
               <label>
-                Assigned coordinator
+                {tr('Assigned coordinator')}
                 <select value={assignment} onChange={(e) => setAssignment(e.target.value)}>
-                  <option value="">Choose coordinator</option>
+                  <option value="">{tr('Choose coordinator')}</option>
                   {staff
                     .filter((s) => s.role !== 'worker')
                     .map((s) => (
@@ -773,7 +827,7 @@ export function PrivateCasePage() {
                 </select>
               </label>
               <label>
-                Assigned workers
+                {tr('Assigned workers')}
                 <select
                   multiple
                   value={workers}
@@ -799,29 +853,45 @@ export function PrivateCasePage() {
                   })
                 }
               >
-                Confirm assignment
+                {tr('Confirm assignment')}
               </button>
             </>
           )}
         </section>
       )}
       <section className="panel">
-        <h2>Follow-ups & in-app reminders</h2>
+        <h2>{tr('Follow-ups & in-app reminders')}</h2>
+        {(c.notices || [])
+          .filter((n) => n.delivered_at)
+          .map((n) => (
+            <div key={n.id}>
+              <p>{n.message}</p>
+              <small>{human(n.action)}</small>
+              <button
+                disabled={busy || n.acknowledged_by.includes(user.id)}
+                onClick={() => void action(`/notices/${n.id}/acknowledge`, { note: '' })}
+              >
+                {n.acknowledged_by.includes(user.id)
+                  ? tr('Acknowledged')
+                  : tr('Acknowledge update')}
+              </button>
+            </div>
+          ))}
         {c.followups.map((f) => (
           <p key={f.id}>
-            {human(f.reason)} · {new Date(f.due_at).toLocaleString()} · {f.status}
+            {tr(human(f.reason))} · {new Date(f.due_at).toLocaleString()} · {f.status}
           </p>
         ))}
         {c.reminders.map((r) => (
           <div key={r.id} className="notice">
             <p>
-              {r.message} · {human(r.reason)}
+              {r.message} · {tr(human(r.reason))}
             </p>
             <button
               disabled={busy || r.acknowledged_by.includes(user.id)}
               onClick={() => void action(`/reminders/${r.id}/acknowledge`, { note: '' })}
             >
-              {r.acknowledged_by.includes(user.id) ? 'Acknowledged' : 'Acknowledge'}
+              {r.acknowledged_by.includes(user.id) ? tr('Acknowledged') : tr('Acknowledge')}
             </button>
           </div>
         ))}
@@ -832,17 +902,17 @@ export function PrivateCasePage() {
           }}
         >
           <label>
-            Follow-up type
+            {tr('Follow-up type')}
             <select value={reason} onChange={(e) => setReason(e.target.value)}>
               {['manual', 'appointment', 'missing_documents', 'coordinator_review'].map((r) => (
                 <option value={r} key={r}>
-                  {human(r)}
+                  {tr(human(r))}
                 </option>
               ))}
             </select>
           </label>
           <label>
-            Follow-up date and time (your local time)
+            {tr('Follow-up date and time (your local time)')}
             <input
               type="datetime-local"
               required
@@ -850,7 +920,7 @@ export function PrivateCasePage() {
               onChange={(e) => setDate(e.target.value)}
             />
           </label>
-          <button disabled={busy}>Schedule in-app follow-up</button>
+          <button disabled={busy}>{tr('Schedule in-app follow-up')}</button>
         </form>
         <PreferencesForm
           record={c}
@@ -861,17 +931,17 @@ export function PrivateCasePage() {
         />
       </section>
       <section className="panel">
-        <h2>Internal human referrals</h2>
-        {c.escalations.length === 0 && <p>No escalations recorded.</p>}
+        <h2>{tr('Internal human referrals')}</h2>
+        {c.escalations.length === 0 && <p>{tr('No escalations recorded.')}</p>}
         {c.escalations.map((e) => (
           <div className="escalation-row" key={e.id}>
             <p>
-              {human(e.reason)} · {e.severity} · {e.status}
+              {tr(human(e.reason))} · {e.severity} · {e.status}
             </p>
             <p>
               {e.owner_coordinator_id
-                ? 'An authorized coordinator owns this referral.'
-                : 'Awaiting coordinator assignment.'}
+                ? tr('An authorized coordinator owns this referral.')
+                : tr('Awaiting coordinator assignment.')}
             </p>
             {e.resolution_note && <p>{e.resolution_note}</p>}
             {reviewer && (
@@ -883,7 +953,7 @@ export function PrivateCasePage() {
                       void action(`/escalations/${e.id}`, { action: 'acknowledge', note })
                     }
                   >
-                    Acknowledge referral
+                    {tr('Acknowledge referral')}
                   </button>
                 )}
                 {e.status !== 'resolved' ? (
@@ -891,14 +961,14 @@ export function PrivateCasePage() {
                     disabled={busy || !note}
                     onClick={() => void action(`/escalations/${e.id}`, { action: 'resolve', note })}
                   >
-                    Resolve with note
+                    {tr('Resolve with note')}
                   </button>
                 ) : (
                   <button
                     disabled={busy || !note}
                     onClick={() => void action(`/escalations/${e.id}`, { action: 'reopen', note })}
                   >
-                    Reopen referral
+                    {tr('Reopen referral')}
                   </button>
                 )}
               </div>
@@ -907,25 +977,26 @@ export function PrivateCasePage() {
         ))}
       </section>
       <section className="panel">
-        <h2>Case activity timeline</h2>
+        <h2>{tr('Case activity timeline')}</h2>
         <ol>
           {[...c.activity]
             .reverse()
             .slice(0, 30)
             .map((e) => (
               <li key={e.id}>
-                <strong>{human(e.action)}</strong>
+                <strong>{tr(human(e.action))}</strong>
                 <small>{new Date(e.at).toLocaleString()}</small>
                 {e.note && <p>{e.note}</p>}
               </li>
             ))}
         </ol>
         <p>
-          Showing up to 30 latest events. Full paginated history is available through the authorized
-          activity API.
+          {tr(
+            'Showing up to 30 latest events. Full paginated history is available through the authorized activity API.',
+          )}
         </p>
         <details>
-          <summary>Scheme source versions</summary>
+          <summary>{tr('Scheme source versions')}</summary>
           {Object.entries(c.scheme_source_versions).map(([s, v]) => (
             <p className="small source-hash" key={s}>
               {s}: {v}
@@ -946,25 +1017,41 @@ function PreferencesForm({
   save: (p: Record<string, unknown>) => Promise<void>;
   busy: boolean;
 }) {
+  const { tr } = useLanguage();
+
   const [enabled, setEnabled] = useState(record.preferences.in_app);
   const [start, setStart] = useState(record.preferences.quiet_start);
   const [end, setEnd] = useState(record.preferences.quiet_end);
+  const [noticeLanguage, setNoticeLanguage] = useState(record.preferences.language || 'en');
   return (
     <form
       className="preferences"
       onSubmit={(e) => {
         e.preventDefault();
-        void save({ in_app: enabled, quiet_start: start, quiet_end: end });
+        void save({
+          in_app: enabled,
+          quiet_start: start,
+          quiet_end: end,
+          language: noticeLanguage,
+        });
       }}
     >
-      <h3>Notification preferences</h3>
+      <h3>{tr('Notification preferences')}</h3>
+      <label>
+        {tr('Notification language')}
+        <select value={noticeLanguage} onChange={(e) => setNoticeLanguage(e.target.value)}>
+          <option value="en">English</option>
+          <option value="hi">हिन्दी</option>
+          <option value="te">తెలుగు</option>
+        </select>
+      </label>
       <label className="check-label">
         <input type="checkbox" checked={enabled} onChange={(e) => setEnabled(e.target.checked)} />
-        In-app notifications
+        {tr('In-app notifications')}
       </label>
       <div className="profile-grid">
         <label>
-          Quiet hours start (IST, 0–23)
+          {tr('Quiet hours start (IST, 0–23)')}
           <input
             type="number"
             min={0}
@@ -975,7 +1062,7 @@ function PreferencesForm({
           />
         </label>
         <label>
-          Quiet hours end (IST, 0–23)
+          {tr('Quiet hours end (IST, 0–23)')}
           <input
             type="number"
             min={0}
@@ -986,8 +1073,8 @@ function PreferencesForm({
           />
         </label>
       </div>
-      <button disabled={busy}>Save reminder preferences</button>
-      <p>No SMS or WhatsApp messages are sent.</p>
+      <button disabled={busy}>{tr('Save reminder preferences')}</button>
+      <p>{tr('No SMS or WhatsApp messages are sent.')}</p>
     </form>
   );
 }

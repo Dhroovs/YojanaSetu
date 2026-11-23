@@ -97,6 +97,7 @@ class DoorstepCoordinator:
         return self.step(
             s,
             "confirm_authorized_assignment_and_schedule_notifications",
+            booking=result,
             result={**s["result"], "applied": True, "booking": result},
         )
 
@@ -114,6 +115,19 @@ class DoorstepCoordinator:
         from app.ai.providers import LanguageModel
 
         staff = s["actor"].role in {"admin", "coordinator"}
+        next_action = {
+            "worker_assigned": "Worker acceptance is required before appointment confirmation.",
+            "visit_scheduled": "Review the confirmed appointment; worker check-in is time-gated.",
+            "worker_en_route": "The accepted worker may check in within the appointment window.",
+            "visit_in_progress": "Record performed services and submit the outcome for review.",
+            "completion_pending_review": "Coordinator review of the submitted outcome is required.",
+            "visit_completed": "Review completion, provide feedback or request follow-up.",
+            "follow_up_required": "Review the scheduled internal follow-up.",
+            "closed": "This internal visit is closed. Review its recorded history.",
+            "cancelled": "This request is cancelled; no appointment is promised.",
+            "rejected": "This request was rejected; review the coordinator note.",
+            "escalated": "An authorized coordinator must review the unresolved internal problem.",
+        }.get(s["booking"]["stage"], "Coordinator approval and worker acceptance are required.")
         summary = await LanguageModel(self.service.settings).grounded_summary(
             [
                 f"Internal visit stage: {s['booking']['stage']}.",
@@ -130,7 +144,7 @@ class DoorstepCoordinator:
                 "booking_id": s["booking_id"],
                 "category": s["booking"]["category"],
                 "candidates": s["candidates"] if staff else [],
-                "next_action": "Coordinator approval and worker acceptance are required.",
+                "next_action": next_action,
                 "grounded_summary": summary,
                 "disclaimer": "Internal assistance, not government approval or certification.",
             },

@@ -1,0 +1,122 @@
+{
+  "scheme_count": 3,
+  "source_count": 4,
+  "schemes": [
+    {
+      "scheme_id": "kalyana-lakshmi",
+      "scheme_name": "Kalyana Lakshmi Pathakam",
+      "sources": [
+        {
+          "source_id": "kalyana-lakshmi-epass",
+          "official_url": "https://telanganaepass.cgg.gov.in/KalyanaLakshmiLinks.jsp",
+          "department": "Government of Telangana, ePASS portal",
+          "document_title": "Kalyana Lakshmi Pathakam services and category-specific income information",
+          "published_at": null,
+          "retrieved_at": "2026-11-23T16:06:36.628258+00:00",
+          "last_verified_at": "2026-11-23",
+          "content_hash": "2c502982835e778c5c0722b2f652c2b1cfa60fcc0ef2b1f292736a293279d327",
+          "version": "51cb5e7bf2b2d7c5efccefea12f2620a45f4dcffd2610908850c9908884d9019",
+          "geographic_coverage": [
+            "Telangana"
+          ],
+          "completeness": "partial",
+          "dated": false,
+          "missing_fields": [
+            "required_documents",
+            "benefits",
+            "application_process"
+          ],
+          "application_url_reviewed_at": "2026-11-23"
+        }
+      ],
+      "potential_conflicts": [],
+      "requires_reconciliation": false
+    },
+    {
+      "scheme_id": "pm-kisan",
+      "scheme_name": "Pradhan Mantri Kisan Samman Nidhi (PM-KISAN)",
+      "sources": [
+        {
+          "source_id": "pm-kisan-portal",
+          "official_url": "https://pmkisan.gov.in/",
+          "department": "Department of Agriculture and Farmers Welfare, Ministry of Agriculture and Farmers Welfare",
+          "document_title": "PM-Kisan Samman Nidhi — official portal, scheme and exclusions",
+          "published_at": "2025-06-20",
+          "retrieved_at": "2026-11-16T14:19:56.362470+00:00",
+          "last_verified_at": "2026-11-16",
+          "content_hash": "34a0297a840aea76074eeb03179e1dc49249cad648a2317fdfdd957b3b744e14",
+          "version": "5f6bbca595ea053f2badb885b32af73b77e0c3efb59673b6a77ce588a4e81b5e",
+          "geographic_coverage": [
+            "India"
+          ],
+          "completeness": "partial",
+          "dated": true,
+          "missing_fields": [
+            "required_documents",
+            "benefits",
+            "application_process",
+            "application_url"
+          ],
+          "application_url_reviewed_at": null
+        }
+      ],
+      "potential_conflicts": [],
+      "requires_reconciliation": false
+    },
+    {
+      "scheme_id": "pmsby",
+      "scheme_name": "Pradhan Mantri Suraksha Bima Yojana (PMSBY)",
+      "sources": [
+        {
+          "source_id": "pmsby-dfs-faq",
+          "official_url": "https://financialservices.gov.in/pmsby",
+          "department": "Department of Financial Services, Ministry of Finance",
+          "document_title": "PMSBY official frequently asked questions",
+          "published_at": "2025-12-24",
+          "retrieved_at": "2026-11-23T15:59:49.693066+00:00",
+          "last_verified_at": "2026-11-23",
+          "content_hash": "edf2935c5fa9f3bf8fb6ad973fc3198043e8ba24ef841ced15ef441db6e246ef",
+          "version": "82d063225d667d96881f0827f3762120da69874bc1d050074abc934bce7c85e2",
+          "geographic_coverage": [
+            "India"
+          ],
+          "completeness": "partial",
+          "dated": false,
+          "missing_fields": [
+            "required_documents",
+            "benefits",
+            "application_process",
+            "application_url"
+          ],
+          "application_url_reviewed_at": null
+        },
+        {
+          "source_id": "pmsby-official-rules-pdf",
+          "official_url": "https://jansuraksha.gov.in/Files/PMSBY/English/Rules.pdf",
+          "department": "Department of Financial Services, Ministry of Finance",
+          "document_title": "PMSBY official rules, effective from 1 June 2022",
+          "published_at": null,
+          "retrieved_at": "2026-11-23T16:37:07.083319+00:00",
+          "last_verified_at": "2026-11-23",
+          "content_hash": "195a99298e85821bd84174c4973ad8f8be2ecf24cfb97f865799c702cae7feb5",
+          "version": "b8c2672a88f7c1c8ea66b659b93a4757ef6cc28a53dab1456dbc563c7158611d",
+          "geographic_coverage": [
+            "India"
+          ],
+          "completeness": "partial",
+          "dated": false,
+          "missing_fields": [
+            "benefits",
+            "application_process",
+            "application_url"
+          ],
+          "application_url_reviewed_at": null
+        }
+      ],
+      "potential_conflicts": [],
+      "requires_reconciliation": true
+    }
+  ],
+  "duplicate_content": [],
+  "notice": "Partial evidence is not complete eligibility. Conflicts require human review."
+}

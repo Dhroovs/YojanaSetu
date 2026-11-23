@@ -1,0 +1,21 @@
+{
+  "checked_at": "2026-11-23T17:00:21.160948+00:00",
+  "packages_checked": 119,
+  "source": "https://api.osv.dev/v1/querybatch",
+  "findings": [
+    {
+      "package": "chromadb",
+      "version": "1.5.9",
+      "advisories": [
+        "GHSA-2wm9-hf6c-p5cr",
+        "GHSA-36p7-vc44-83pf",
+        "GHSA-f4j7-r4q5-qw2c",
+        "GHSA-xph7-9rjv-w5fr",
+        "PYSEC-2026-311",
+        "PYSEC-2026-3813",
+        "PYSEC-2026-3814",
+        "PYSEC-2026-3815"
+      ]
+    }
+  ]
+}

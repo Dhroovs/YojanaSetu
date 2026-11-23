@@ -2,12 +2,23 @@
 
 import asyncio
 import json
+from contextvars import ContextVar
 from typing import Protocol
 from urllib.parse import urlparse
 
 import httpx
 
 from app.config import Settings
+
+_usage = ContextVar("model_usage", default=())
+
+
+def begin_model_usage():
+    _usage.set(())
+
+
+def model_usage():
+    return list(_usage.get())
 
 
 class ProviderUnavailable(RuntimeError):
@@ -37,6 +48,12 @@ class EmbeddingProvider:
                     self.local = ONNXMiniLM_L6_V2(preferred_providers=["CPUExecutionProvider"])
                 return [list(map(float, v)) for v in self.local(texts)]
             if self.settings.embedding_provider == "ollama":
+                if urlparse(self.settings.model_base_url).hostname not in {
+                    "localhost",
+                    "127.0.0.1",
+                    "::1",
+                }:
+                    raise ProviderUnavailable("Ollama embeddings require a local loopback endpoint")
                 with httpx.Client(timeout=self.settings.model_timeout_seconds) as client:
                     response = client.post(
                         f"{self.settings.model_base_url.rstrip('/')}/api/embed",
@@ -64,6 +81,15 @@ class LanguageModel:
         if not self.enabled:
             return {}
         host = urlparse(self.settings.model_base_url).hostname
+        address = urlparse(self.settings.model_base_url)
+        if (
+            address.username
+            or address.password
+            or (host not in {"localhost", "127.0.0.1", "::1"} and address.scheme != "https")
+        ):
+            raise ProviderUnavailable(
+                "Remote model endpoints require HTTPS and separate credentials"
+            )
         if self.settings.llm_provider == "openai_compatible" and not self.settings.allow_hosted_llm:
             raise ProviderUnavailable("Hosted inference is disabled until explicitly approved.")
         if self.settings.llm_provider == "ollama" and host not in {"localhost", "127.0.0.1", "::1"}:
@@ -102,7 +128,32 @@ class LanguageModel:
                 data.extend(part)
                 if len(data) > self.settings.llm_max_output_chars * 8:
                     raise ValueError("Provider response exceeds the configured size limit")
-            return json.loads(data)
+            result = json.loads(data)
+            if not isinstance(result, dict):
+                raise ValueError("Expected provider response object")
+            usage = result.get("usage", {})
+            if not isinstance(usage, dict):
+                usage = {}
+            prompt = result.get("prompt_eval_count", usage.get("prompt_tokens"))
+            completion = result.get("eval_count", usage.get("completion_tokens"))
+
+            def count(value):
+                return value if type(value) is int and 0 <= value <= 100_000_000 else None
+
+            _usage.set(
+                (
+                    *_usage.get(),
+                    {
+                        "provider": self.settings.llm_provider,
+                        "input_tokens": count(prompt),
+                        "output_tokens": count(completion),
+                        "provider_reported": count(prompt) is not None
+                        or count(completion) is not None,
+                        "estimated_cost": None,
+                    },
+                )
+            )
+            return result
 
     async def _request(self, system, data):
         messages = [

@@ -110,7 +110,13 @@ class CaseStore:
     async def due_cases(self, now, limit):
         rows = (
             await self.collection.find(
-                {"next_automation_at": {"$lte": now}, "stage": {"$nin": ["completed", "closed"]}},
+                {
+                    "next_automation_at": {"$lte": now},
+                    "$or": [
+                        {"stage": {"$nin": ["completed", "closed"]}},
+                        {"notices": {"$elemMatch": {"delivered_at": None}}},
+                    ],
+                },
                 {"_id": 0},
             )
             .sort("next_automation_at", 1)

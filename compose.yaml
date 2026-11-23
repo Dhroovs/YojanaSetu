@@ -1,0 +1,53 @@
+name: yojanasetu-local
+services:
+  mongo:
+    image: mongo:8.0
+    volumes: [mongo-data:/data/db]
+    healthcheck:
+      test: [CMD, mongosh, --quiet, --eval, "db.adminCommand('ping').ok"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+  backend:
+    build: ./backend
+    environment: &application
+      APP_ENV: production
+      MONGODB_URI: mongodb://mongo:27017
+      MONGODB_DATABASE: yojanasetu
+      CORS_ORIGINS: '["http://localhost:8080"]'
+      ENABLE_DEMO_DATA: 'false'
+      ENABLE_DEV_CASE_ACCESS: 'false'
+      ENABLE_CITIZEN_REGISTRATION: 'true'
+      ENABLE_AI: 'true'
+      LLM_PROVIDER: none
+      ALLOW_HOSTED_LLM: 'false'
+      CHROMA_PATH: /app/data/chroma
+      DOCUMENT_STORAGE_PATH: /app/data/private-documents
+    volumes: [application-data:/app/data, model-cache:/home/app/.cache]
+    depends_on:
+      mongo: {condition: service_healthy}
+    restart: unless-stopped
+    init: true
+    stop_grace_period: 30s
+  worker:
+    build: ./backend
+    environment: *application
+    command: [python, -m, app.cases.worker, --purge-expired]
+    volumes: [application-data:/app/data]
+    depends_on:
+      backend: {condition: service_healthy}
+    restart: unless-stopped
+    init: true
+    stop_grace_period: 30s
+    healthcheck: {disable: true}
+  frontend:
+    build: ./frontend
+    ports: ['127.0.0.1:8080:8080']
+    depends_on:
+      backend: {condition: service_healthy}
+    restart: unless-stopped
+volumes:
+  mongo-data:
+  application-data:
+  model-cache:

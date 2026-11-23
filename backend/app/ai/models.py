@@ -183,4 +183,5 @@ class MatchResponse(StrictModel):
     warnings: list[str]
     mode: str
     trace: list[str]
+    model_usage: list[dict] = Field(default_factory=list)
     disclaimer: str = "Preliminary guidance only. No official approval or application submission."

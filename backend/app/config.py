@@ -28,6 +28,7 @@ class Settings(BaseSettings):
     llm_max_output_chars: int = Field(default=16000, ge=256, le=64000)
     llm_retry_limit: int = Field(default=1, ge=0, le=2)
     allow_hosted_llm: bool = False
+    enable_citizen_registration: bool = True
     ai_timeout_seconds: float = Field(default=90, ge=1, le=600)
     retrieval_top_k: int = Field(default=8, ge=1, le=30)
     retrieval_max_distance: float = Field(default=0.65, ge=0, le=2)
@@ -44,6 +45,7 @@ class Settings(BaseSettings):
     closed_case_retention_days: int = Field(default=180, ge=1, le=3650)
     enable_document_ocr: bool = False
     follow_up_interval_hours: int = Field(default=24, ge=1, le=168)
+    case_notification_interval_hours: int = Field(default=1, ge=1, le=24)
     escalation_inactivity_days: int = Field(default=7, ge=1, le=365)
     document_review_escalation_hours: int = Field(default=48, ge=1, le=720)
     missing_document_reminder_limit: int = Field(default=3, ge=1, le=20)

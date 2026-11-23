@@ -5,9 +5,10 @@ import { api, CaseRecord, DoorstepRecord, Scheme } from './api';
 import './styles.css';
 import { SchemeCard } from './scheme-card';
 import { Assistant, Match, MatchCard } from './assistant';
-import { SourceList } from './source-list';
-import { AuthProvider, SignIn, useAuth } from './auth';
-import { PrivateCasePage, PrivateDashboard } from './private-cases';
+import { SourceCoverage, SourceList } from './source-list';
+import { AuthProvider, Register, SignIn, useAuth } from './auth';
+import { Administration } from './admin';
+import { AccessGate, PrivateCasePage, PrivateDashboard } from './private-cases';
 import {
   SevaDashboard,
   SevaRequestDetail,
@@ -16,70 +17,83 @@ import {
   SevaWorkers,
 } from './seva';
 import { LanguageProvider, useLanguage } from './language';
+import { useSessionResults } from './session-results';
 
 function Home() {
+  const { tr } = useLanguage();
+
   return (
     <>
       <section className="hero">
         <div>
-          <div className="eyebrow">INFORMATION. ASSISTANCE. POSSIBILITY.</div>
+          <div className="eyebrow">{tr('INFORMATION. ASSISTANCE. POSSIBILITY.')}</div>
           <h1>
-            A little guidance.
-            <br />A world of
+            {tr('A little guidance.')}
             <br />
-            <em>possibilities.</em>
+            {tr('A world of')}
+            <br />
+            <em>{tr('possibilities.')}</em>
           </h1>
           <p>
-            Find your way to welfare support, understand the next step, and get help closer to home.
+            {tr(
+              'Find your way to welfare support, understand the next step, and get help closer to home.',
+            )}
           </p>
           <Link className="button" to="/schemes">
-            Explore demo schemes <span aria-hidden>↗</span>
+            {tr('Explore demo schemes ')}
+            <span aria-hidden>↗</span>
           </Link>
-          <p className="small">Made for citizens. Built around care.</p>
+          <p className="small">{tr('Made for citizens. Built around care.')}</p>
         </div>
-        <aside className="hero-art" aria-label="Three simple steps">
+        <aside className="hero-art" aria-label={tr('Three simple steps')}>
           <div className="sun" />
           <div className="path" />
           <div className="step">
             <span>01</span>
-            <strong>Discover support</strong>
-            <p>Understand your options</p>
+            <strong>{tr('Discover support')}</strong>
+            <p>{tr('Understand your options')}</p>
           </div>
           <div className="step">
             <span>02</span>
-            <strong>Take the next step</strong>
-            <p>Ask for application guidance</p>
+            <strong>{tr('Take the next step')}</strong>
+            <p>{tr('Ask for application guidance')}</p>
           </div>
           <div className="step">
             <span>03</span>
-            <strong>Stay connected</strong>
-            <p>Follow your assistance case</p>
+            <strong>{tr('Stay connected')}</strong>
+            <p>{tr('Follow your assistance case')}</p>
           </div>
         </aside>
       </section>
       <section>
         <div className="section-heading">
           <div>
-            <div className="eyebrow">TWO BRIDGES. ONE PURPOSE.</div>
-            <h2>Support, wherever you are.</h2>
+            <div className="eyebrow">{tr('TWO BRIDGES. ONE PURPOSE.')}</div>
+            <h2>{tr('Support, wherever you are.')}</h2>
           </div>
-          <p>Simple steps towards a more accessible tomorrow.</p>
+          <p>{tr('Simple steps towards a more accessible tomorrow.')}</p>
         </div>
         <div className="grid">
           <article className="card">
             <span className="symbol">↗</span>
             <h2>YojanaSetu</h2>
-            <p>A clearer path through scheme information, documents, and assistance tracking.</p>
+            <p>
+              {tr('A clearer path through scheme information, documents, and assistance tracking.')}
+            </p>
             <Link className="text-link" to="/schemes">
-              Find your starting point →
+              {tr('Find your starting point →')}
             </Link>
           </article>
           <article className="card teal">
             <span className="symbol">⌂</span>
             <h2>SevaSetu</h2>
-            <p>Request local doorstep support when navigating digital services feels difficult.</p>
+            <p>
+              {tr(
+                'Request local doorstep support when navigating digital services feels difficult.',
+              )}
+            </p>
             <Link className="text-link" to="/doorstep">
-              Explore doorstep assistance →
+              {tr('Explore doorstep assistance →')}
             </Link>
           </article>
         </div>
@@ -88,6 +102,8 @@ function Home() {
   );
 }
 function Schemes() {
+  const { tr } = useLanguage();
+
   const [query, setQuery] = useState('');
   const [search, setSearch] = useState('');
   const [schemes, setSchemes] = useState<Scheme[]>([]);
@@ -122,7 +138,7 @@ function Schemes() {
     <>
       <PageTitle
         tag="FIND YOUR STARTING POINT"
-        title="Discover support"
+        title={tr('Discover support')}
         text="Browse reviewed official sources and clearly labelled fictional demos. The scheme assistant checks documented conditions with citations."
       />
       <form
@@ -132,31 +148,31 @@ function Schemes() {
           setSearch(query);
         }}
       >
-        <label htmlFor="search">Search by topic or category</label>
+        <label htmlFor="search">{tr('Search by topic or category')}</label>
         <div className="row">
           <input
             id="search"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Try education, agriculture, wellbeing…"
+            placeholder={tr('Try education, agriculture, wellbeing…')}
             maxLength={100}
           />
-          <button>Search schemes</button>
+          <button>{tr('Search schemes')}</button>
         </div>
       </form>
       <div className="profile-grid">
         <label>
-          Source type
+          {tr('Source type')}
           <select value={dataset} onChange={(e) => setDataset(e.target.value)}>
-            <option value="all">All sources</option>
-            <option value="verified">Official reviewed sources</option>
-            <option value="demo">Fictional demos</option>
+            <option value="all">{tr('All sources')}</option>
+            <option value="verified">{tr('Official reviewed sources')}</option>
+            <option value="demo">{tr('Fictional demos')}</option>
           </select>
         </label>
         <label>
-          Category
+          {tr('Category')}
           <select value={category} onChange={(e) => setCategory(e.target.value)}>
-            <option value="">All categories</option>
+            <option value="">{tr('All categories')}</option>
             {[...new Set(schemes.map((s) => s.category))].map((c) => (
               <option key={c}>{c}</option>
             ))}
@@ -164,7 +180,7 @@ function Schemes() {
         </label>
       </div>
       {loading ? (
-        <p role="status">Loading schemes…</p>
+        <p role="status">{tr('Loading schemes…')}</p>
       ) : error ? (
         <ErrorMessage message={error} />
       ) : visible.length ? (
@@ -174,17 +190,18 @@ function Schemes() {
           ))}
         </div>
       ) : (
-        <p>No schemes found. Try another topic.</p>
+        <p>{tr('No schemes found. Try another topic.')}</p>
       )}
     </>
   );
 }
 function PageTitle({ tag, title, text }: { tag: string; title: string; text: string }) {
+  const { tr } = useLanguage();
   return (
     <header className="page-title">
       <div className="eyebrow">{tag}</div>
-      <h1>{title}</h1>
-      <p>{text}</p>
+      <h1>{tr(title)}</h1>
+      <p>{tr(text)}</p>
     </header>
   );
 }
@@ -196,9 +213,11 @@ function ErrorMessage({ message }: { message: string }) {
   );
 }
 function TokenField({ token, setToken }: { token: string; setToken: (s: string) => void }) {
+  const { tr } = useLanguage();
+
   return (
     <label>
-      Local development token
+      {tr('Local development token')}
       <input
         type="password"
         autoComplete="off"
@@ -207,12 +226,14 @@ function TokenField({ token, setToken }: { token: string; setToken: (s: string) 
         required
       />
       <small>
-        For local demo use only. Not a citizen login. Token stays in this page’s memory.
+        {tr('For local demo use only. Not a citizen login. Token stays in this page’s memory.')}
       </small>
     </label>
   );
 }
 function Detail() {
+  const { tr } = useLanguage();
+
   const { user } = useAuth();
   const { id } = useParams();
   const [scheme, setScheme] = useState<Scheme>();
@@ -257,11 +278,11 @@ function Detail() {
     <>
       {error && <ErrorMessage message={error} />}{' '}
       {!scheme ? (
-        <p role="status">{error ? 'Scheme could not be loaded.' : 'Loading scheme…'}</p>
+        <p role="status">{error ? tr('Scheme could not be loaded.') : tr('Loading scheme…')}</p>
       ) : (
         <>
           <PageTitle
-            tag={scheme.is_demo ? 'FICTIONAL DEMO SCHEME' : 'SCHEME INFORMATION'}
+            tag={scheme.is_demo ? tr('FICTIONAL DEMO SCHEME') : tr('SCHEME INFORMATION')}
             title={scheme.title}
             text={scheme.summary}
           />
@@ -282,7 +303,9 @@ function Detail() {
                 <h2>{title}</h2>
                 <ul>
                   {(items as string[]).length === 0 && (
-                    <li>Not available in the indexed information. Confirm with the department.</li>
+                    <li>
+                      {tr('Not available in the indexed information. Confirm with the department.')}
+                    </li>
                   )}
                   {(items as string[]).map((item) => (
                     <li key={item}>{item}</li>
@@ -293,33 +316,39 @@ function Detail() {
           </div>
           {user ? (
             <section className="panel">
-              <h2>Request private case assistance</h2>
-              <p>Create an assistance case owned by your signed-in account.</p>
+              <h2>{tr('Request private case assistance')}</h2>
+              <p>{tr('Create an assistance case owned by your signed-in account.')}</p>
               <Link className="button" to={`/dashboard?scheme=${scheme.id}`}>
-                Begin private assistance →
+                {tr('Begin private assistance →')}
               </Link>
             </section>
           ) : (
             <form className="panel" onSubmit={submit}>
-              <h2>Request assistance</h2>
+              <h2>{tr('Request assistance')}</h2>
               <p>
-                Creates a local demo case. No official application, approval or KYC is performed. Do
-                not enter personal information.
+                {tr(
+                  'Creates a local demo case. No official application, approval or KYC is performed. Do not enter personal information.',
+                )}
               </p>
               <TokenField token={token} setToken={setToken} />
               <label>
-                Type of assistance
+                {tr('Type of assistance')}
                 <select name="assistance">
-                  <option>Understand eligibility</option>
-                  <option>Document checklist guidance</option>
-                  <option>Application process guidance</option>
+                  <option value="Understand eligibility">{tr('Understand eligibility')}</option>
+                  <option value="Document checklist guidance">
+                    {tr('Document checklist guidance')}
+                  </option>
+                  <option value="Application process guidance">
+                    {tr('Application process guidance')}
+                  </option>
                 </select>
               </label>
-              <button disabled={busy}>{busy ? 'Creating…' : 'Create demo case'}</button>
+              <button disabled={busy}>{busy ? tr('Creating…') : tr('Create demo case')}</button>
               {result && (
                 <p role="status">
-                  Case created. Save this reference: <strong>{result}</strong>.{' '}
-                  <Link to={`/tracking?case=${result}`}>Track case →</Link>
+                  {tr('Case created. Save this reference: ')}
+                  <strong>{result}</strong>.{' '}
+                  <Link to={`/tracking?case=${result}`}>{tr('Track case →')}</Link>
                 </p>
               )}
             </form>
@@ -330,13 +359,15 @@ function Detail() {
   );
 }
 function Dashboard({ matches }: { matches: Match[] }) {
+  const { tr } = useLanguage();
+
   const { user } = useAuth();
   if (user)
     return (
       <>
         <PrivateDashboard />
         <section className="matched-dashboard">
-          <h2>Scheme matches in this session</h2>
+          <h2>{tr('Scheme matches in this session')}</h2>
           {matches.map((m, i) => (
             <MatchCard key={`${m.scheme_id}-${i}`} match={m} />
           ))}
@@ -347,12 +378,12 @@ function Dashboard({ matches }: { matches: Match[] }) {
     <>
       <PageTitle
         tag="YOUR NEXT STEP"
-        title="Citizen assistance"
+        title={tr('Citizen assistance')}
         text="Sign in to view cases owned by your account, upload documents privately and request internal human assistance."
       />
       <p>
         <Link className="button" to="/login">
-          Sign in to private case assistance
+          {tr('Sign in to private case assistance')}
         </Link>
       </p>
       <div className="grid">
@@ -365,27 +396,34 @@ function Dashboard({ matches }: { matches: Match[] }) {
             <h2>{title}</h2>
             <p>{text}</p>
             <Link className="text-link" to={url}>
-              Get started →
+              {tr('Get started →')}
             </Link>
           </article>
         ))}
       </div>
       <section className="matched-dashboard">
-        <h2>Matches from this session</h2>
-        <p>Results stay in this tab’s memory. No account or cross-device history is connected.</p>
+        <h2>{tr('Matches from this session')}</h2>
+        <p>
+          {tr(
+            'Results stay in this tab’s memory. No account or cross-device history is connected.',
+          )}
+        </p>
         <Link className="text-link" to="/assistant">
-          Ask the scheme assistant →
+          {tr('Ask the scheme assistant →')}
         </Link>
         {matches.length ? (
           matches.map((m, i) => <MatchCard key={`${m.scheme_id}-${i}`} match={m} />)
         ) : (
-          <p>No matches in this active session yet.</p>
+          <p>{tr('No matches in this active session yet.')}</p>
         )}
       </section>
     </>
   );
 }
 function Tracking() {
+  const { tr, formatDate } = useLanguage();
+  const session = useAuth();
+
   const [token, setToken] = useState('');
   const [record, setRecord] = useState<CaseRecord>();
   const [error, setError] = useState('');
@@ -397,7 +435,14 @@ function Tracking() {
     setError('');
     const id = new FormData(e.currentTarget).get('case') as string;
     try {
-      setRecord(await api<CaseRecord>(`/cases/${encodeURIComponent(id.trim())}`, token));
+      setRecord(
+        await api<CaseRecord>(
+          `/cases/${encodeURIComponent(id.trim())}`,
+          token,
+          undefined,
+          session.user ? { Authorization: `Bearer ${session.token}` } : {},
+        ),
+      );
     } catch (e) {
       setError((e as Error).message);
     } finally {
@@ -408,35 +453,47 @@ function Tracking() {
     <>
       <PageTitle
         tag="STAY CONNECTED"
-        title="Track your assistance case"
+        title={tr('Track your assistance case')}
         text="Status reflects a local assistance record, not a government application."
       />
       <form className="panel" onSubmit={submit}>
         <label>
-          Case reference
+          {tr('Case reference')}
           <input
             name="case"
             required
             defaultValue={new URLSearchParams(window.location.search).get('case') || ''}
           />
         </label>
-        <TokenField token={token} setToken={setToken} />
-        <button disabled={busy}>{busy ? 'Checking…' : 'Check status'}</button>
+        {!session.user && <TokenField token={token} setToken={setToken} />}
+        <button disabled={busy}>{busy ? tr('Checking…') : tr('Check status')}</button>
         {error && <ErrorMessage message={error} />}
       </form>
       {record && (
         <article className="card" role="status">
           <div className="eyebrow">{record.status.replaceAll('_', ' ')}</div>
           <h2>{record.assistance_type}</h2>
-          <p>Reference: {record.id}</p>
-          <p>Received: {new Date(record.created_at).toLocaleString()}</p>
-          <p>Human review and automatic updates are not connected.</p>
+          <p>
+            {tr('Reference: ')}
+            {record.id}
+          </p>
+          <p>
+            {tr('Received: ')}
+            {formatDate(record.created_at)}
+          </p>
+          {session.user ? (
+            <Link to={`/my-cases/${record.id}`}>{tr('Open authorized case')}</Link>
+          ) : (
+            <p>{tr('Human review and automatic updates are not connected.')}</p>
+          )}
         </article>
       )}
     </>
   );
 }
 function Doorstep() {
+  const { tr } = useLanguage();
+
   const [token, setToken] = useState('');
   const [error, setError] = useState('');
   const [result, setResult] = useState('');
@@ -468,41 +525,45 @@ function Doorstep() {
     <>
       <PageTitle
         tag="SEVASETU · CLOSER TO HOME"
-        title="Help begins at your doorstep."
+        title={tr('Help begins at your doorstep.')}
         text="Explore requesting in-person guidance. Worker assignment and real visits are not available in Phase 1."
       />
       <form className="panel" onSubmit={submit}>
         <p>
-          Use a fictional district. Do not enter a name, phone number, address or identity details.
+          {tr(
+            'Use a fictional district. Do not enter a name, phone number, address or identity details.',
+          )}
         </p>
         <label>
-          Demo district
+          {tr('Demo district')}
           <input
             name="district"
             minLength={2}
             maxLength={80}
             required
-            placeholder="Example district"
+            placeholder={tr('Example district')}
           />
         </label>
         <label>
-          Support needed
+          {tr('Support needed')}
           <select name="service_type">
-            <option>Scheme information guidance</option>
-            <option>Digital service guidance</option>
-            <option>Document checklist guidance</option>
+            <option value="Scheme information guidance">{tr('Scheme information guidance')}</option>
+            <option value="Digital service guidance">{tr('Digital service guidance')}</option>
+            <option value="Document checklist guidance">{tr('Document checklist guidance')}</option>
           </select>
         </label>
         <label>
-          Preferred date
+          {tr('Preferred date')}
           <input type="date" name="preferred_date" min={minDate} required />
         </label>
         <TokenField token={token} setToken={setToken} />
-        <button disabled={busy}>{busy ? 'Saving…' : 'Save demo request'}</button>
+        <button disabled={busy}>{busy ? tr('Saving…') : tr('Save demo request')}</button>
         {error && <ErrorMessage message={error} />}{' '}
         {result && (
           <p role="status">
-            Demo request received: <strong>{result}</strong>. This does not book a visit.
+            {tr('Demo request received: ')}
+            <strong>{result}</strong>
+            {tr('. This does not book a visit.')}
           </p>
         )}
       </form>
@@ -510,16 +571,20 @@ function Doorstep() {
   );
 }
 function App() {
-  const { user } = useAuth();
+  const { tr } = useLanguage();
+
+  const { user, token } = useAuth();
   const { language, setLanguage, t } = useLanguage();
-  const [matches, setMatches] = useState<Match[]>([]);
+  const [matches, setMatches] = useSessionResults<Match>(token);
   return (
     <>
       <a className="skip" href="#main">
-        Skip to content
+        {tr('Skip to content')}
       </a>
       <div className="demo-bar">
-        DEVELOPMENT PREVIEW · Demo and official sources are labelled · No government affiliation
+        {tr(
+          'DEVELOPMENT PREVIEW · Demo and official sources are labelled · No government affiliation',
+        )}
       </div>
       <header className="site-header">
         <Link className="brand" to="/">
@@ -528,7 +593,7 @@ function App() {
           </span>
           Yojana<span>Setu</span>
         </Link>
-        <nav aria-label="Main navigation">
+        <nav aria-label={tr('Main navigation')}>
           <NavLink to="/schemes">{t('discover')}</NavLink>
           <NavLink to="/assistant">{t('assistant')}</NavLink>
           <NavLink to="/dashboard">{t('assistance')}</NavLink>
@@ -537,8 +602,12 @@ function App() {
           <NavLink to="/login">{user ? t('account') : t('signIn')}</NavLink>
         </nav>
         <label className="language">
-          <span className="sr-only">Language preview</span>
-          <select value={language} onChange={(e) => setLanguage(e.target.value)}>
+          <span className="sr-only">{tr('Language preview')}</span>
+          <select
+            data-testid="language-switcher"
+            value={language}
+            onChange={(e) => setLanguage(e.target.value)}
+          >
             <option value="en">English</option>
             <option value="hi">हिन्दी</option>
             <option value="te">తెలుగు</option>
@@ -547,32 +616,43 @@ function App() {
       </header>
       {language !== 'en' && (
         <p className="language-note" role="status">
-          {t('partial')} Scheme explanations use English fallback.
+          {t('partial')} {tr(' Scheme explanations use English fallback.')}
         </p>
       )}
-      <main id="main" lang="en">
+      <main id="main" lang={language} tabIndex={-1}>
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/schemes" element={<Schemes />} />
+          <Route path="/sources" element={<SourceCoverage />} />
           <Route path="/schemes/:id" element={<Detail />} />
-          <Route path="/dashboard" element={<Dashboard matches={matches} />} />
+          <Route
+            path="/dashboard"
+            element={import.meta.env.PROD ? <PrivateDashboard /> : <Dashboard matches={matches} />}
+          />
           <Route path="/assistant" element={<Assistant onMatches={setMatches} />} />
           <Route path="/tracking" element={<Tracking />} />
-          <Route path="/doorstep" element={user ? <SevaDashboard /> : <Doorstep />} />
+          <Route
+            path="/doorstep"
+            element={
+              user ? <SevaDashboard /> : import.meta.env.PROD ? <AccessGate /> : <Doorstep />
+            }
+          />
           <Route path="/seva" element={<SevaDashboard />} />
           <Route path="/seva/new" element={<SevaRequestForm />} />
           <Route path="/seva/requests/:id" element={<SevaRequestDetail />} />
           <Route path="/seva/profile" element={<SevaWorkerProfile />} />
           <Route path="/seva/workers" element={<SevaWorkers />} />
           <Route path="/login" element={<SignIn />} />
+          <Route path="/register" element={<Register />} />
+          <Route path="/admin" element={<Administration />} />
           <Route path="/my-cases/:id" element={<PrivateCasePage />} />
           <Route path="/coordinator" element={<PrivateDashboard coordinator />} />
           <Route
             path="*"
             element={
               <>
-                <h1>Page not found</h1>
-                <Link to="/">Return home</Link>
+                <h1>{tr('Page not found')}</h1>
+                <Link to="/">{tr('Return home')}</Link>
               </>
             }
           />
@@ -582,12 +662,12 @@ function App() {
         <Link className="brand" to="/">
           YojanaSetu
         </Link>
-        <p>A bridge to information. A step towards support.</p>
-        <Link to="/coordinator">Coordinator workspace →</Link>
+        <p>{tr('A bridge to information. A step towards support.')}</p>
+        <Link to="/coordinator">{tr('Coordinator workspace →')}</Link>
         <p className="small">
-          Development prototype. No official approvals or submissions. Scheme matching requires
-          local configuration. Document, follow-up and escalation assistance require a signed-in
-          account. SevaSetu visits require coordinator approval and worker acceptance.
+          {tr(
+            'Development prototype. No official approvals or submissions. Scheme matching requires local configuration. Document, follow-up and escalation assistance require a signed-in account. SevaSetu visits require coordinator approval and worker acceptance.',
+          )}
         </p>
       </footer>
     </>

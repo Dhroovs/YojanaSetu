@@ -1,6 +1,7 @@
 import argparse
 import asyncio
 import logging
+import signal
 
 from pymongo import AsyncMongoClient
 
@@ -14,6 +15,13 @@ from app.seva.store import SevaStore
 
 async def run(args):
     settings = Settings()
+    stop = asyncio.Event()
+    loop = asyncio.get_running_loop()
+    for name in (signal.SIGINT, signal.SIGTERM):
+        try:
+            loop.add_signal_handler(name, stop.set)
+        except NotImplementedError:
+            signal.signal(name, lambda *_: loop.call_soon_threadsafe(stop.set))
     async with AsyncMongoClient(
         settings.mongodb_uri, serverSelectionTimeoutMS=3000, tz_aware=True
     ) as client:
@@ -22,7 +30,7 @@ async def run(args):
         seva_store = SevaStore(client[settings.mongodb_database])
         await seva_store.initialize()
         seva = SevaService(seva_store, runtime.cases, runtime.auth, settings)
-        while True:
+        while not stop.is_set():
             try:
                 count = await process_due(runtime.cases, limit=args.limit)
                 visits = await process_seva_due(seva, limit=args.limit)
@@ -45,7 +53,10 @@ async def run(args):
                     raise SystemExit(1) from exc
             if args.once:
                 return
-            await asyncio.sleep(args.poll_seconds)
+            try:
+                await asyncio.wait_for(stop.wait(), timeout=args.poll_seconds)
+            except TimeoutError:
+                pass
 
 
 def main():

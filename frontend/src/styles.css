@@ -1,7 +1,25 @@
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap');
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+button,
+select,
+input:not([type='checkbox']),
+.check-label {
+  min-height: 44px;
+}
+:focus-visible {
+  outline: 3px solid #087f8c;
+  outline-offset: 3px;
+}
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
+}
 .quick-actions,
 .review-actions {
   display: flex;

@@ -1,5 +1,6 @@
 import asyncio
 import secrets
+import time
 from contextlib import asynccontextmanager
 from datetime import date
 
@@ -44,7 +45,7 @@ def create_app(
             if client is not None:
                 await client.close()
 
-    app = FastAPI(title="YojanaSetu · Phase 3", lifespan=lifespan)
+    app = FastAPI(title="YojanaSetu + SevaSetu · Phase 5 RC", lifespan=lifespan)
     app.state.ai_service = ai_service
     app.state.settings = settings
     app.state.private_runtime = private_runtime
@@ -90,9 +91,35 @@ def create_app(
 
     @app.middleware("http")
     async def private_no_cache(request, call_next):
+        from app.observability import request_logger
+
+        started = time.monotonic()
+        request_id = secrets.token_hex(12)
         response = await call_next(request)
+        response.headers["X-Request-ID"] = request_id
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["Referrer-Policy"] = "no-referrer"
+        response.headers["X-Frame-Options"] = "DENY"
+        route = request.scope.get("route")
+        request_logger().info(
+            "http_request",
+            extra={
+                "request_id": request_id,
+                "method": request.method,
+                "route": getattr(route, "path", "unmatched"),
+                "status": response.status_code,
+                "duration_ms": round((time.monotonic() - started) * 1000),
+            },
+        )
         if request.url.path.startswith(
-            ("/api/auth", "/api/cases", "/api/coordinator", "/api/seva")
+            (
+                "/api/auth",
+                "/api/cases",
+                "/api/coordinator",
+                "/api/seva",
+                "/api/admin",
+                "/api/ai/scheme-",
+            )
         ):
             response.headers["Cache-Control"] = "no-store"
         return response
@@ -123,11 +150,34 @@ def create_app(
     from app.seva.api import make_router as make_seva_router
 
     app.include_router(make_seva_router())
+    from app.admin import make_admin_router
+
+    app.include_router(make_admin_router())
 
     @app.get("/api/health")
     async def health(repository=Depends(repo)):
         await repository.list_schemes("")
         return {"status": "ok", "environment": settings.app_env}
+
+    @app.get("/api/live")
+    async def live():
+        return {"status": "alive"}
+
+    @app.get("/api/ready")
+    async def ready(request: Request):
+        from app.auth import private_runtime
+        from app.seva.runtime import seva_service
+
+        runtime = await private_runtime(request)
+        await runtime.auth.database.command("ping")
+        await seva_service(request)
+        return {
+            "status": "ready",
+            "database": "reachable",
+            "indexes": "initialized",
+            "private_storage": "directory_available",
+            "llm": settings.llm_provider,
+        }
 
     @app.get("/api/schemes", response_model=list[GovernmentScheme])
     async def schemes(q: str = Query(default="", max_length=100), repository=Depends(repo)):

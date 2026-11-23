@@ -65,9 +65,25 @@ class CaseService:
     def event(self, case, actor, action, note="", now=None):
         if len(case.activity) >= 1500:
             raise HTTPException(409, "Case audit capacity reached. Contact the administrator.")
-        case.activity.append(
-            Event(action=action, actor_id=actor.id, note=note, at=now or now_utc())
-        )
+        event = Event(action=action, actor_id=actor.id, note=note, at=now or now_utc())
+        case.activity.append(event)
+        if action in {
+            "case_created",
+            "stage_changed",
+            "coordinator_assigned",
+            "document_received",
+            "document_reviewed",
+            "document_deleted",
+            "followup_scheduled",
+            "escalation_created",
+            "escalation_acknowledge",
+            "escalation_resolve",
+            "escalation_reopen",
+        }:
+            from app.cases.models import CaseNotice
+
+            case.notices.append(CaseNotice(event_id=event.id, action=action, due_at=event.at))
+            case.next_automation_at = min(case.next_automation_at, event.at)
 
     def stage(self, case, value):
         case.stage = value
@@ -86,6 +102,7 @@ class CaseService:
         demo = scheme.get("is_demo", True)
         versions = {}
         labels = []
+        label_sources = {}
         verified = False
         if demo:
             labels = scheme.get("documents", [])
@@ -100,12 +117,14 @@ class CaseService:
                         "field_evidence", {}
                     ).get("required_documents"):
                         labels.extend(source["required_documents"])
+                        for label in source["required_documents"]:
+                            label_sources.setdefault(label, []).append(source_id)
                         verified = True
         items = [
             ChecklistItem(
                 id=hashlib.sha256(label.encode()).hexdigest()[:20],
                 label=label,
-                source_ids=list(versions),
+                source_ids=label_sources.get(label, []),
                 is_demo=demo,
             )
             for label in dict.fromkeys(labels)

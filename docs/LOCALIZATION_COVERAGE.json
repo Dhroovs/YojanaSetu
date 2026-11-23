@@ -1,0 +1,53 @@
+{
+  "method": "Unique static JSX phrases captured before instrumentation, excluding official/dynamic data. Translation means dictionary coverage, not native-language certification.",
+  "dictionary_entries": 534,
+  "static_phrases": 456,
+  "covered": 456,
+  "pages": {
+    "main": {
+      "phrases": 90,
+      "translated": 90,
+      "missing": []
+    },
+    "auth": {
+      "phrases": 22,
+      "translated": 22,
+      "missing": []
+    },
+    "assistant": {
+      "phrases": 40,
+      "translated": 40,
+      "missing": []
+    },
+    "private-cases": {
+      "phrases": 98,
+      "translated": 98,
+      "missing": []
+    },
+    "seva": {
+      "phrases": 170,
+      "translated": 170,
+      "missing": []
+    },
+    "scheme-card": {
+      "phrases": 3,
+      "translated": 3,
+      "missing": []
+    },
+    "source-list": {
+      "phrases": 17,
+      "translated": 17,
+      "missing": []
+    },
+    "admin": {
+      "phrases": 19,
+      "translated": 19,
+      "missing": []
+    },
+    "voice": {
+      "phrases": 13,
+      "translated": 13,
+      "missing": []
+    }
+  }
+}

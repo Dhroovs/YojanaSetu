@@ -1,4 +1,25 @@
 import { createContext, ReactNode, useContext, useEffect, useState } from 'react';
+import { translations } from './translations';
+
+export function translate(text: string, language: string): string {
+  const result = translations[text.trim()]?.[language as 'hi' | 'te'];
+  return language === 'en' || !result
+    ? text
+    : `${text.startsWith(' ') ? ' ' : ''}${result}${text.endsWith(' ') ? ' ' : ''}`;
+}
+export const localeFor = (language: string) =>
+  ({ en: 'en-IN', hi: 'hi-IN', te: 'te-IN' })[language] || 'en-IN';
+export function localizedDate(value: string, language: string) {
+  try {
+    return new Intl.DateTimeFormat(localeFor(language), {
+      dateStyle: 'medium',
+      timeStyle: 'short',
+      timeZone: 'Asia/Kolkata',
+    }).format(new Date(value));
+  } catch {
+    return value;
+  }
+}
 
 const en = {
   discover: 'Discover',
@@ -9,7 +30,7 @@ const en = {
   signIn: 'Sign in',
   account: 'My account',
   partial:
-    'Partial interface translation. Scheme rules, legal conditions and most forms use English fallback.',
+    'Draft interface translation. Official evidence and some diagnostics keep their source language.',
   book: 'Request doorstep assistance',
 };
 type Key = keyof typeof en;
@@ -23,7 +44,7 @@ export const dictionaries: Record<string, Record<Key, string>> = {
     doorstep: 'सेवासेतु',
     signIn: 'साइन इन',
     account: 'मेरा खाता',
-    partial: 'इंटरफ़ेस का आंशिक अनुवाद। योजना नियम, कानूनी शर्तें और अधिकांश फ़ॉर्म अंग्रेज़ी में उपलब्ध हैं।',
+    partial: 'इंटरफ़ेस अनुवाद प्रारूप है। आधिकारिक प्रमाण और कुछ संदेश मूल भाषा में रहते हैं।',
     book: 'घर पर सहायता का अनुरोध करें',
   },
   te: {
@@ -34,7 +55,7 @@ export const dictionaries: Record<string, Record<Key, string>> = {
     doorstep: 'సేవాసేతు',
     signIn: 'సైన్ ఇన్',
     account: 'నా ఖాతా',
-    partial: 'ఇంటర్‌ఫేస్ పాక్షిక అనువాదం. పథకం నియమాలు, చట్టపరమైన షరతులు మరియు చాలా ఫారమ్‌లు ఆంగ్లంలో ఉంటాయి.',
+    partial: 'ఇంటర్‌ఫేస్ అనువాదం ముసాయిదా. అధికారిక ఆధారాలు, కొన్ని సందేశాలు మూల భాషలో ఉంటాయి.',
     book: 'ఇంటి వద్ద సహాయాన్ని అభ్యర్థించండి',
   },
 };
@@ -44,6 +65,9 @@ const Context = createContext({
     void value;
   },
   t: (key: Key) => en[key],
+  tr: (text: string) => text,
+  formatDate: (value: string) => localizedDate(value, 'en'),
+  formatNumber: (value: number) => new Intl.NumberFormat('en-IN').format(value),
 });
 export function LanguageProvider({ children }: { children: ReactNode }) {
   const [language, set] = useState(() => {
@@ -70,6 +94,9 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
           if (Object.hasOwn(dictionaries, value)) set(value);
         },
         t: (key) => dictionaries[language]?.[key] || en[key],
+        tr: (text) => translate(text, language),
+        formatDate: (value) => localizedDate(value, language),
+        formatNumber: (value) => new Intl.NumberFormat(localeFor(language)).format(value),
       }}
     >
       {children}

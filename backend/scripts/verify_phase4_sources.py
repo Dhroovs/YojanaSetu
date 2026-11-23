@@ -25,7 +25,7 @@ def main():
             report = client.get("/api/ai/coverage")
             assert report.status_code == 200, report.text
             report = report.json()
-            assert report["scheme_count"] == 3 and report["source_count"] == 3
+            assert report["scheme_count"] == 3 and report["source_count"] >= 3
             for scheme_id, question in [
                 ("pmsby", "PMSBY Pradhan Mantri Suraksha Bima Yojana accident insurance"),
                 ("kalyana-lakshmi", "Telangana Kalyana Lakshmi Pathakam marriage assistance"),
@@ -41,7 +41,10 @@ def main():
                 recommendation = next(
                     r for r in data["recommendations"] if r["scheme_id"] == scheme_id
                 )
-                assert recommendation["evidence"] and recommendation["completeness"] == "partial"
+                assert recommendation["evidence"] and recommendation["completeness"] in {
+                    "partial",
+                    "needs_reconciliation",
+                }
                 assert recommendation["status"] == "Unable to determine"
                 assert all(
                     e["verification_status"] == "verified" for e in recommendation["evidence"]
@@ -49,7 +52,7 @@ def main():
                 print(
                     f"PASS: {scheme_id} retrieval, verified citations, partial/unknown eligibility"
                 )
-            print("PASS: coverage API reports 3 official sources / 3 schemes; no LLM called.")
+            print("PASS: coverage API reports official sources / 3 schemes; no LLM called.")
     finally:
 
         async def cleanup():

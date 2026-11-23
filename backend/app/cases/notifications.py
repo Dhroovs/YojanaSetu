@@ -2,6 +2,11 @@ import logging
 from typing import Protocol
 
 logger = logging.getLogger(__name__)
+CASE_MESSAGES = {
+    "en": "Your assistance case has an update. Open the case for details.",
+    "hi": "आपके सहायता मामले में अपडेट है। विवरण के लिए मामला खोलें।",
+    "te": "మీ సహాయ అభ్యర్థనకు నవీకరణ ఉంది. వివరాల కోసం అభ్యర్థనను తెరవండి.",
+}
 
 
 class NotificationProvider(Protocol):

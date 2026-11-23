@@ -191,7 +191,11 @@ def test_verified_assignment_acceptance_conflicts_and_cancel(live):
     assert assign(c, h["coord-a"], second, slot).status_code == 409
     cancelled = act(c, h["citizen-a"], b, "cancel", confirmed=True)
     assert cancelled.status_code == 200, cancelled.text
-    assert assign(c, h["coord-a"], second, slot).status_code == 200
+    assigned_by_graph = assign(c, h["coord-a"], second, slot, path="agent")
+    assert assigned_by_graph.status_code == 200, assigned_by_graph.text
+    assert assigned_by_graph.json()["applied"] is True
+    assert assigned_by_graph.json()["booking"]["stage"] == "worker_assigned"
+    assert "Worker acceptance" in assigned_by_graph.json()["next_action"]
 
 
 @pytest.mark.skipif(not os.getenv("MONGO_TEST_URI"), reason="Set MONGO_TEST_URI")
@@ -293,6 +297,17 @@ def test_worker_outcome_requires_coordinator_review(live):
     feedback = act(c, h["citizen-a"], b, "feedback", rating=5, note="Synthetic feedback")
     assert feedback.status_code == 200, feedback.text
     assert feedback.json()["feedback"]["rating"] == 5
+    disputed = act(
+        c, h["citizen-a"], feedback.json(), "report_problem", note="Synthetic completion dispute"
+    ).json()
+    assert disputed["stage"] == "escalated"
+    assert act(c, h["coord-a"], disputed, "approve").status_code == 409
+    assert (
+        act(c, h["citizen-a"], disputed, "reschedule", confirmed=True, window=window()).status_code
+        == 409
+    )
+    assert act(c, h["citizen-a"], disputed, "cancel", confirmed=True).status_code == 409
+    assert disputed["outcome"]["reviewed_by"] == "coord-a"
 
 
 @pytest.mark.skipif(not os.getenv("MONGO_TEST_URI"), reason="Set MONGO_TEST_URI")

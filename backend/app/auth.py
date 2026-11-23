@@ -8,8 +8,19 @@ from collections import defaultdict, deque
 from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Request
+from pydantic import Field
+from pymongo.errors import DuplicateKeyError
 
-from app.cases.models import Actor, Login
+from app.cases.models import Actor, Login, Strict, new_id
+
+
+class Registration(Login):
+    consent: bool
+    language: str = Field(default="en", pattern=r"^(en|hi|te)$")
+
+
+class AccountPreferences(Strict):
+    language: str = Field(pattern=r"^(en|hi|te)$")
 
 
 def hash_password(password: str, salt: bytes | None = None) -> str:
@@ -56,7 +67,11 @@ async def current_actor(request: Request, authorization: str = Header(default=""
     if not session:
         raise HTTPException(401, "Session expired or revoked. Sign in again.")
     user = await runtime.auth.user_by_id(session["user_id"])
-    if not user or not user.get("active", False):
+    if (
+        not user
+        or not user.get("active", False)
+        or session.get("auth_version", 0) != user.get("auth_version", 0)
+    ):
         raise HTTPException(401, "Session expired or revoked. Sign in again.")
     return Actor(id=user["id"], username=user["username"], role=user["role"])
 
@@ -70,6 +85,7 @@ class MongoAuthStore:
         await self.database.users.create_index("id", unique=True)
         await self.database.sessions.create_index("token_hash", unique=True)
         await self.database.sessions.create_index("expires_at", expireAfterSeconds=0)
+        await self.database.auth_admission.create_index("expires_at", expireAfterSeconds=0)
 
     async def user(self, username):
         return await self.database.users.find_one({"username": username}, {"_id": 0})
@@ -99,8 +115,14 @@ class MongoAuthStore:
             )
 
     async def add_session(self, hashed, user_id, expiry):
+        user = await self.user_by_id(user_id)
         await self.database.sessions.insert_one(
-            {"token_hash": hashed, "user_id": user_id, "expires_at": expiry}
+            {
+                "token_hash": hashed,
+                "user_id": user_id,
+                "expires_at": expiry,
+                "auth_version": user.get("auth_version", 0),
+            }
         )
         await self.database.users.update_one(
             {"id": user_id}, {"$set": {"failed_logins": 0}, "$unset": {"locked_until": ""}}
@@ -120,6 +142,44 @@ def make_auth_router(settings):
     router = APIRouter(prefix="/api/auth", tags=["Authentication"])
     attempts = defaultdict(deque)
     dummy = hash_password("not-an-account-" + secrets.token_hex(16))
+
+    @router.post("/register", status_code=201, response_model=Actor)
+    async def register(body: Registration, request: Request):
+        if not settings.enable_citizen_registration:
+            raise HTTPException(403, "Citizen registration is disabled by the operator.")
+        if not body.consent:
+            raise HTTPException(422, "Confirm the privacy notice before creating an account.")
+        runtime = await private_runtime(request)
+        from pymongo import ReturnDocument
+
+        now = datetime.now(timezone.utc)
+        ip = request.client.host if request.client else "local"
+        key = token_hash(f"registration:{ip}:{int(now.timestamp()) // 60}")
+        counter = await runtime.auth.database.auth_admission.find_one_and_update(
+            {"_id": key},
+            {"$inc": {"count": 1}, "$setOnInsert": {"expires_at": now + timedelta(minutes=2)}},
+            upsert=True,
+            return_document=ReturnDocument.AFTER,
+        )
+        if counter["count"] > 5:
+            raise HTTPException(429, "Too many registration attempts. Wait one minute.")
+        user = {
+            "id": new_id(),
+            "username": body.username.casefold(),
+            "role": "citizen",
+            "active": True,
+            "password_hash": await asyncio.to_thread(hash_password, body.password),
+            "revision": 0,
+            "auth_version": 0,
+            "language": body.language,
+            "privacy_consent_at": now,
+            "failed_logins": 0,
+        }
+        try:
+            await runtime.auth.database.users.insert_one(user.copy())
+        except DuplicateKeyError as exc:
+            raise HTTPException(409, "Account alias is unavailable. Choose another alias.") from exc
+        return Actor(id=user["id"], username=user["username"], role="citizen")
 
     @router.post("/login")
     async def login(body: Login, request: Request):
@@ -158,7 +218,16 @@ def make_auth_router(settings):
             "token_type": "bearer",
             "expires_at": expiry,
             "user": Actor(id=user["id"], username=user["username"], role=user["role"]),
+            "language": user.get("language", "en"),
         }
+
+    @router.post("/preferences")
+    async def preferences(body: AccountPreferences, request: Request, actor=Depends(current_actor)):
+        runtime = await private_runtime(request)
+        await runtime.auth.database.users.update_one(
+            {"id": actor.id}, {"$set": {"language": body.language}}
+        )
+        return {"language": body.language}
 
     @router.get("/me", response_model=Actor)
     async def me(actor=Depends(current_actor)):

@@ -1,7 +1,9 @@
+import { useLanguage } from './language';
 import { FormEvent, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from './api';
 import { useOptionalAuth } from './auth';
+import { VoiceAssistance } from './voice';
 
 export interface Evidence {
   chunk_id: string;
@@ -37,31 +39,39 @@ interface Reply {
 const sessionKey = crypto.randomUUID().replaceAll('-', '');
 
 export function CitationView({ evidence }: { evidence: Evidence }) {
+  const { tr } = useLanguage();
+
   return (
     <details className="citation">
       <summary>
         {evidence.document_title}
-        {evidence.page ? ` · page ${evidence.page}` : ' · web source'}
+        {evidence.page ? ` · page ${evidence.page}` : tr(' · web source')}
       </summary>
       <blockquote>{evidence.quote}</blockquote>
       <a href={evidence.official_url} target="_blank" rel="noopener noreferrer">
-        Read official source ↗
+        {tr('Read official source ↗')}
       </a>
       <small>
-        Retrieved {new Date(evidence.retrieved_at).toLocaleDateString()}. Publication/update date:{' '}
-        {evidence.published_at || 'unknown'}.
+        {tr('Retrieved ')}
+        {new Date(evidence.retrieved_at).toLocaleDateString()}
+        {tr('. Publication/update date:')} {evidence.published_at || 'unknown'}.
       </small>
       {evidence.verification_status === 'synthetic' && (
-        <strong>Synthetic test document — not government information.</strong>
+        <strong>{tr('Synthetic test document — not government information.')}</strong>
       )}
     </details>
   );
 }
 
 export function MatchCard({ match }: { match: Match }) {
+  const { tr } = useLanguage();
+
   return (
     <article className="card match-card">
-      <div className="eyebrow">SOURCE-BASED GUIDANCE · {match.completeness} INFORMATION</div>
+      <div className="eyebrow">
+        {tr('SOURCE-BASED GUIDANCE · ')}
+        {match.completeness} {tr(' INFORMATION')}
+      </div>
       <h2>{match.scheme_name}</h2>
       <p className={`status-chip ${match.status.startsWith('Not eligible') ? 'excluded' : ''}`}>
         {match.status}
@@ -77,16 +87,16 @@ export function MatchCard({ match }: { match: Match }) {
           <CitationView evidence={condition.citation} />
         </div>
       ))}
-      <h3>Supporting source excerpts</h3>
+      <h3>{tr('Supporting source excerpts')}</h3>
       {match.evidence.map((e) => (
         <CitationView key={e.chunk_id} evidence={e} />
       ))}
       <Link className="text-link" to={`/schemes/${match.scheme_id}`}>
-        View scheme details →
+        {tr('View scheme details →')}
       </Link>
       <p>
         <Link className="text-link" to={`/seva/new?scheme=${match.scheme_id}`}>
-          Explore in-person assistance for this scheme →
+          {tr('Explore in-person assistance for this scheme →')}
         </Link>
       </p>
     </article>
@@ -94,6 +104,8 @@ export function MatchCard({ match }: { match: Match }) {
 }
 
 export function Assistant({ onMatches }: { onMatches: (matches: Match[]) => void }) {
+  const { tr } = useLanguage();
+
   const session = useOptionalAuth();
   const [question, setQuestion] = useState('');
   const [token, setToken] = useState('');
@@ -132,7 +144,10 @@ export function Assistant({ onMatches }: { onMatches: (matches: Match[]) => void
         reply ? '/ai/scheme-chat' : '/ai/scheme-match',
         token,
         { question, profile: values, ...(reply ? { conversation_id: reply.conversation_id } : {}) },
-        { 'X-Session-Key': sessionKey },
+        {
+          'X-Session-Key': sessionKey,
+          ...(session?.token ? { Authorization: `Bearer ${session.token}` } : {}),
+        },
       );
       setReply(response);
       onMatches(response.recommendations);
@@ -165,64 +180,70 @@ export function Assistant({ onMatches }: { onMatches: (matches: Match[]) => void
   return (
     <>
       <header className="page-title">
-        <div className="eyebrow">YOJANASETU · SCHEME ASSISTANT</div>
-        <h1>Let’s find your next step.</h1>
+        <div className="eyebrow">{tr('YOJANASETU · SCHEME ASSISTANT')}</div>
+        <h1>{tr('Let’s find your next step.')}</h1>
         <p>
-          Ask about scheme support and inspect the source evidence. This is preliminary guidance,
-          never official approval.
+          {tr(
+            'Ask about scheme support and inspect the source evidence. This is preliminary guidance, never official approval.',
+          )}
         </p>
       </header>
       <p className="notice">
-        Local development only. Do not enter names, Aadhaar numbers, bank details, contact
-        information or document images. English is supported; Hindi/Telugu translation is not
-        connected.
+        {tr(
+          'Do not enter names, Aadhaar numbers, bank details, contact information or document images. Interface translations are drafts; official evidence stays in its source language.',
+        )}
       </p>
       <section className="panel">
-        <h2>Ask about an assistance case</h2>
+        <h2>{tr('Ask about an assistance case')}</h2>
         <p>
-          Document checklists, recorded case progress, follow-ups and human referrals use only your
-          authorized case record.
+          {tr(
+            'Document checklists, recorded case progress, follow-ups and human referrals use only your authorized case record.',
+          )}
         </p>
         <Link className="text-link" to={session?.user ? '/dashboard' : '/login'}>
           {session?.user
-            ? 'Choose my case and ask the case assistant →'
-            : 'Sign in for private case assistance →'}
+            ? tr('Choose my case and ask the case assistant →')
+            : tr('Sign in for private case assistance →')}
         </Link>
       </section>
       {turns.length > 0 && (
-        <section className="conversation" aria-label="Conversation">
+        <section className="conversation" aria-label={tr('Conversation')}>
           {turns.map((turn, i) => (
             <div key={i}>
               <p>
-                <strong>You:</strong> {turn.question}
+                <strong>{tr('You:')}</strong> {turn.question}
               </p>
               <p>
-                <strong>Assistant:</strong> {turn.message}
+                <strong>{tr('Assistant:')}</strong> {turn.message}
               </p>
             </div>
           ))}
         </section>
       )}
+      <VoiceAssistance onQuestion={setQuestion} response={reply?.message || ''} />
       <form className="panel assistant-form" onSubmit={submit}>
-        <label>
-          Local development token
-          <input
-            type="password"
-            value={token}
-            onChange={(e) => setToken(e.target.value)}
-            autoComplete="off"
-            required
-          />
-        </label>
+        {!session?.user && (
+          <label>
+            {tr('Local development token')}
+            <input
+              type="password"
+              value={token}
+              onChange={(e) => setToken(e.target.value)}
+              autoComplete="off"
+              required
+            />
+          </label>
+        )}
         <details>
-          <summary>Optional profile · share only what is needed</summary>
+          <summary>{tr('Optional profile · share only what is needed')}</summary>
           <p>
-            Approximate values are enough. Leave unknown fields blank. Documented conditions
-            determine which follow-up questions are asked.
+            {tr(
+              'Approximate values are enough. Leave unknown fields blank. Documented conditions determine which follow-up questions are asked.',
+            )}
           </p>
           <div className="profile-grid">
             <label>
-              State of residence
+              {tr('State of residence')}
               <input
                 value={profile.state || ''}
                 maxLength={60}
@@ -230,7 +251,7 @@ export function Assistant({ onMatches }: { onMatches: (matches: Match[]) => void
               />
             </label>
             <label>
-              Age
+              {tr('Age')}
               <input
                 type="number"
                 min="0"
@@ -240,7 +261,7 @@ export function Assistant({ onMatches }: { onMatches: (matches: Match[]) => void
               />
             </label>
             <label>
-              Annual household income (₹)
+              {tr('Annual household income (₹)')}
               <input
                 type="number"
                 min="0"
@@ -250,7 +271,7 @@ export function Assistant({ onMatches }: { onMatches: (matches: Match[]) => void
               />
             </label>
             <label>
-              Occupation
+              {tr('Occupation')}
               <input
                 value={profile.occupation || ''}
                 maxLength={80}
@@ -259,22 +280,22 @@ export function Assistant({ onMatches }: { onMatches: (matches: Match[]) => void
             </label>
             {optionalBooleans.map((field) => (
               <label key={field}>
-                {field.replaceAll('_', ' ')}
-                {field === 'disability' ? ' (voluntary)' : ''}
+                {tr(field.replaceAll('_', ' '))}
+                {field === 'disability' ? tr(' (voluntary)') : ''}
                 <select
                   value={profile[field] || ''}
                   onChange={(e) => update(field, e.target.value)}
                 >
-                  <option value="">Not supplied / unknown</option>
-                  <option value="true">Yes</option>
-                  <option value="false">No</option>
+                  <option value="">{tr('Not supplied / unknown')}</option>
+                  <option value="true">{tr('Yes')}</option>
+                  <option value="false">{tr('No')}</option>
                 </select>
               </label>
             ))}
           </div>
         </details>
         <label>
-          Your question
+          {tr('Your question')}
           <textarea
             value={question}
             onChange={(e) => setQuestion(e.target.value)}
@@ -282,12 +303,16 @@ export function Assistant({ onMatches }: { onMatches: (matches: Match[]) => void
             maxLength={1500}
             required
             rows={3}
-            placeholder="I am a farmer from Telangana. What support might be relevant?"
+            placeholder={tr('I am a farmer from Telangana. What support might be relevant?')}
           />
         </label>
         <div className="row">
           <button disabled={busy}>
-            {busy ? 'Checking source evidence…' : reply ? 'Ask follow-up' : 'Find relevant schemes'}
+            {busy
+              ? tr('Checking source evidence…')
+              : reply
+                ? 'Ask follow-up'
+                : 'Find relevant schemes'}
           </button>
           <button
             type="button"
@@ -303,10 +328,10 @@ export function Assistant({ onMatches }: { onMatches: (matches: Match[]) => void
               onMatches([]);
             }}
           >
-            Start new conversation
+            {tr('Start new conversation')}
           </button>
         </div>
-        {busy && <p role="status">Retrieving documents and checking cited conditions…</p>}
+        {busy && <p role="status">{tr('Retrieving documents and checking cited conditions…')}</p>}
         {error && (
           <p className="error" role="alert">
             {error}
@@ -314,7 +339,7 @@ export function Assistant({ onMatches }: { onMatches: (matches: Match[]) => void
         )}
       </form>
       {reply && (
-        <section aria-label="Assistant results" aria-live="polite">
+        <section aria-label={tr('Assistant results')} aria-live="polite">
           <p className="eyebrow">{reply.mode}</p>
           <p>{reply.disclaimer}</p>
           {reply.warnings.map((w) => (
@@ -324,8 +349,8 @@ export function Assistant({ onMatches }: { onMatches: (matches: Match[]) => void
           ))}
           {reply.follow_up_questions.length > 0 && (
             <div className="panel">
-              <h2>To check the documented conditions</h2>
-              <p>Use the profile fields above to answer or correct these details.</p>
+              <h2>{tr('To check the documented conditions')}</h2>
+              <p>{tr('Use the profile fields above to answer or correct these details.')}</p>
               {reply.follow_up_questions.map((q) => (
                 <p key={q}>{q}</p>
               ))}

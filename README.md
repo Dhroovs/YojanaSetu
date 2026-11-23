@@ -1,174 +1,74 @@
-# YojanaSetu + SevaSetu — Phase 3
+# YojanaSetu + SevaSetu - Phase 5 local release candidate
 
-A runnable local development foundation for scheme discovery, assistance cases and
-doorstep request intake, extended with a LangGraph scheme matcher and source-grounded
-Chroma retrieval. Fictional demos are labelled separately from reviewed official sources.
-This is not a government service. Use fictional citizen profiles during development.
-No paid provider is enabled by default.
+An integrated welfare-information and citizen-assistance application using React,
+TypeScript, FastAPI, MongoDB, LangGraph, local ONNX embeddings and Chroma retrieval.
+Five bounded agent workflows connect source-backed scheme guidance, private document
+assistance, durable follow-ups/escalation and consented doorstep visits.
 
-## Phase 3 private assistance
+**Public release is blocked by unresolved upstream ChromaDB advisories.** The application
+uses an embedded local client and does not expose Chroma HTTP endpoints, but no patched
+package version was available at verification. Docker/remote CI runtime, live LLM and
+native speech also remain explicitly unverified. This is not production certification,
+government authorization, an official MeeSeva partner or a publicly deployed service.
+No paid API call, public deployment, cloud resource or GitHub push was performed.
 
-Individual login, Citizen/Worker/Coordinator/Admin permissions, private document
-uploads, human checklist review, durable in-app follow-ups, escalations and a bounded
-multi-agent case assistant are implemented. Read [Phase 3 setup and security notes](docs/phase3.md).
-Never use real citizen documents in this development preview. Internal completion
-does not mean official government approval or KYC.
+## Run locally
 
-With MongoDB running, from `backend/`:
+Exact Windows startup/provisioning: [LOCAL_SETUP_WINDOWS.md](docs/LOCAL_SETUP_WINDOWS.md).
+Start MongoDB, backend and the durable worker, then the frontend. Open
+http://localhost:5173/register or /login. Citizens can register; staff roles require
+operator/admin approval. Authenticated matching needs no shared development secret.
+
+From backend, after reviewing `.env.example` and preserving any existing `.env`:
 
 ```powershell
 .\.venv\Scripts\python.exe -m pip install -r requirements.lock.txt
-.\.venv\Scripts\python.exe -m app.cases.cli --username local-citizen --role citizen
-.\.venv\Scripts\python.exe -m app.cases.cli --username local-coordinator --role coordinator
-# Passwords are prompted securely. Provision worker/admin accounts similarly when needed.
-.\.venv\Scripts\python.exe -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
+.\.venv\Scripts\python.exe -m uvicorn app.main:app --host 127.0.0.1 --port 8000 --no-access-log
+# Separate terminal, same directory:
+.\.venv\Scripts\python.exe -m app.cases.worker --purge-expired
 ```
 
-Run `.\.venv\Scripts\python.exe -m app.cases.worker --purge-expired` in another backend
-terminal, then start the frontend as below. Open http://localhost:5173/login.
-Pending reminders survive restarts because schedules are in MongoDB; the worker must
-be running for delivery and physical retention cleanup. Refreshing the browser clears
-the memory-only sign-in session. There is no public registration or role selection.
-SevaSetu now supports consented requests, verified-worker calendars, coordinator assignment, worker acceptance, outcome review and in-app updates. See [Phase 4 operations](docs/phase4.md), [completion report](docs/phase4-completion.md) and [interview guide](docs/interview-guide.md).
-
-## Phase 2 quick start
-
-Complete the Windows setup below, start MongoDB, then configure `backend/.env`:
-
-```dotenv
-APP_ENV=development
-ENABLE_AI=true
-ENABLE_DEV_CASE_ACCESS=true
-DEV_ACCESS_TOKEN=your-own-random-token-of-at-least-32-characters
-EMBEDDING_PROVIDER=onnx
-EMBEDDING_MODEL=all-MiniLM-L6-v2
-LLM_PROVIDER=none
-```
-
-`none` is real semantic retrieval plus deterministic checks and extractive citations,
-**without an LLM**. The first embedding operation downloads about 80 MB of model data.
-For a local LLM, install Ollama, run `ollama pull qwen2.5:3b`, then set
-`LLM_PROVIDER=ollama` and `LLM_MODEL=qwen2.5:3b`. No LLM is installed or tested here;
-its adapters have mocked protocol tests. See model costs, hardware and limitations
-in [Phase 2 documentation](docs/phase2.md).
-
-Review a source before indexing. From `backend/`, with MongoDB running:
+From frontend, using a normal Node 24 installation:
 
 ```powershell
-.\.venv\Scripts\python.exe -m app.ai.cli --manifest sources/pm-kisan-portal.json --confirm-reviewed
-.\.venv\Scripts\python.exe -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
-```
-
-Run the frontend as below, open http://localhost:5173/assistant and enter the local
-development token. The reviewed PM-KISAN page is partial and dated; the assistant
-warns about this and withholds a positive eligibility conclusion. A manifest is
-included, but MongoDB/Chroma contents are local data, not committed artifacts.
-
-## Structure
-
-- `frontend/`: React, TypeScript, Vite, Tailwind and React Router.
-- `backend/app/`: FastAPI, Pydantic models, async MongoDB repository, demo ingestion.
-- `backend/app/agents/`: Scheme Matcher, three case-assistance agents and bounded orchestration;
-  Doorstep Coordinator remains deferred.
-- `backend/app/cases/` and `auth.py`: private case lifecycle, authorization, storage,
-  provisioning, scheduling, review and escalation APIs.
-- `backend/app/ai/`: source ingestion, Chroma, model adapters, rule/citation models,
-  protected API and Mongo conversation memory.
-- `backend/tests/`: API workflow, validation, access restriction and failure tests.
-- `docs/architecture.md`: module boundaries, security decisions and deferred work.
-
-## Windows PowerShell setup
-
-Install Python 3.12 (with pip), Node.js 22.12+ LTS, and MongoDB Community locally.
-Ensure Python, Node and npm are on PATH. Start the local MongoDB service using
-its installer/service configuration. Use a separate development database.
-
-From the repository root, prepare the backend:
-
-```powershell
-cd backend
-py -3 -m venv .venv
-.\.venv\Scripts\python.exe -m pip install -r requirements.lock.txt
-if (!(Test-Path .env)) { Copy-Item .env.example .env }
-```
-
-The copied configuration enables fictional scheme seeding. Case services stay
-disabled. To try case and doorstep flows locally, edit `backend/.env`:
-
-```dotenv
-ENABLE_DEV_CASE_ACCESS=true
-DEV_ACCESS_TOKEN=replace-with-your-own-random-token-at-least-32-characters
-```
-
-Generate a token if desired:
-
-```powershell
-.\.venv\Scripts\python.exe -c "import secrets; print(secrets.token_urlsafe(32))"
-```
-
-Paste the same token into the relevant local form. Do not put it in frontend env
-variables or commit it. Run the backend from `backend/` so `.env` is loaded:
-
-```powershell
-.\.venv\Scripts\python.exe -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
-```
-
-In a second PowerShell terminal, from the repository root:
-
-```powershell
-cd frontend
-Copy-Item .env.example .env
 npm ci
 npm run dev
 ```
 
-Open http://localhost:5173. API docs: http://localhost:8000/docs.
-If Vite chooses another port, update backend `CORS_ORIGINS` and restart it.
-For localhost MongoDB without authentication, retain loopback binding and use
-fictional data only. Supply all connection settings through environment variables.
+The current machine's cached Node/npm commands are documented in the Windows guide.
+Use synthetic data during development. Sessions stay in tab memory and are cleared
+on reload/logout. Language can persist on the device and be saved to the account.
 
-## Verification commands
+## Working scope and evidence
 
-From `backend/`:
+- Public scheme discovery and source coverage; three schemes/four partial official
+  documents, including an actual government rules PDF with page-level citations.
+- Individual signup/login, role and object authorization, private PDF/image assistance,
+  human checklist review, case activity and durable localized notices/reminders.
+- Five controlled agents with deterministic rules, grounded responses, safe retries,
+  explicit human gates and session-owned conversations/results.
+- SevaSetu request, review, verified-worker eligibility, atomic calendar conflicts,
+  assignment proposal/acceptance, check-in, outcome review, feedback and follow-up.
+- Administrator user/role operations, verification, organizations and sanitized status.
+- English/Hindi/Telugu draft static dictionaries with measured coverage, language
+  persistence and source-language fallback. Speech consent/controls/text fallback are
+  tested; native transcription/playback is not certified for any language.
+- Local ONNX/retrieval-only mode works. Hosted models and external messaging remain
+  disabled/unconfigured. Optional provider protocols have mock tests, not live delivery.
 
-```powershell
-.\.venv\Scripts\python.exe -m pytest
-.\.venv\Scripts\python.exe -c "from app.main import app; print(app.title)"
-.\.venv\Scripts\python.exe -m ruff check .
-.\.venv\Scripts\python.exe -m ruff format --check .
-```
+Read [FINAL_HANDOFF.md](docs/FINAL_HANDOFF.md) for exact executed pass/fail/skip counts,
+release gates, source and language evidence, Docker/CI status and continuation steps.
+The Python advisory gate intentionally fails until the unresolved dependency issue is
+resolved or independently reviewed and explicitly approved. Passing unit tests do not
+mean the security/deployment gates passed.
 
-From `frontend/`:
+## Documentation
 
-```powershell
-npm run test
-npm run lint
-npm run build
-```
+- [Architecture](docs/ARCHITECTURE.md), [agents](docs/AGENTS.md), [RAG](docs/RAG_PIPELINE.md)
+- [SevaSetu workflow](docs/SEVASETU_WORKFLOW.md), [API](docs/API_REFERENCE.md), [database/recovery](docs/DATABASE.md)
+- [Security](docs/SECURITY.md), [known limitations](docs/KNOWN_LIMITATIONS.md), [deployment](docs/DEPLOYMENT.md)
+- [Testing](docs/TESTING.md), [completion matrix](docs/PHASE5_COMPLETION_MATRIX.md)
+- [Interview guide](docs/INTERVIEW_GUIDE.md), [demo script](docs/DEMO_SCRIPT.md)
 
-Unit tests use an injected test repository and need no running MongoDB. Real MongoDB
-persistence and Chrome workflow checks have also passed. See
-`docs/phase1-verification.md` for exact results and repeatable integration commands.
-
-## Scope and limitations
-
-SevaSetu's citizen, worker, coordinator and administrator flows are integrated with
-five bounded agent workflows. All assignment and completion decisions retain human
-review. The local index contains three partial official sources: PM-KISAN, PMSBY
-and Telangana Kalyana Lakshmi. Partial evidence never establishes complete eligibility.
-
-English/Hindi/Telugu navigation and notification templates are supported; most forms
-and scheme/legal explanations use English fallback. Voice and external SMS/WhatsApp
-are not connected. Live LLM inference remains unverified; retrieval-only mode works,
-with mocked provider/fallback tests. No government submission, KYC, approval or
-MeeSeva affiliation is implied. This is a local development application.
-
-Latest verification: **95 backend tests** against real MongoDB and **20 frontend
-tests**, plus TypeScript, lint, production build and four Chrome workflows passed.
-See [the completion report](docs/phase4-completion.md) for exact results, source hashes,
-remaining risks and the requirement status matrix. Dependency locks describe the
-verified local installation; they are not a future security guarantee.
-
-For exact Windows commands, environment variables, endpoint tables, architecture,
-agent/lifecycle diagrams, verification policy and production prerequisites, read
-[Phase 4 operations](docs/phase4.md). Earlier reports remain historical evidence.
+No Phase 6 has been started. Historical phase reports remain evidence of earlier
+checkpoints; current canonical documents above take precedence for project status.

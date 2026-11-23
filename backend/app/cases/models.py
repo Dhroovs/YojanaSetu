@@ -27,6 +27,7 @@ class Actor(Strict):
 
 
 class Login(Strict):
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=False)
     username: str = Field(pattern=r"^[a-zA-Z0-9_-]{3,50}$")
     password: str = Field(min_length=12, max_length=128)
 
@@ -131,6 +132,17 @@ class Preferences(Strict):
     in_app: bool = True
     quiet_start: int = Field(default=21, ge=0, le=23)
     quiet_end: int = Field(default=8, ge=0, le=23)
+    language: Literal["en", "hi", "te"] = "en"
+
+
+class CaseNotice(Strict):
+    id: str = Field(default_factory=new_id)
+    event_id: str
+    action: str
+    due_at: datetime
+    delivered_at: datetime | None = None
+    message: str | None = None
+    acknowledged_by: list[str] = Field(default_factory=list)
 
 
 class AssistanceCase(CitizenCase):
@@ -145,6 +157,8 @@ class AssistanceCase(CitizenCase):
     missing_information: list[str] = Field(default_factory=list)
     followups: list[FollowUp] = Field(default_factory=list)
     reminders: list[Reminder] = Field(default_factory=list)
+    notices: list[CaseNotice] = Field(default_factory=list)
+    last_notice_at: datetime | None = None
     escalations: list[Escalation] = Field(default_factory=list)
     coordinator_id: str | None = None
     worker_ids: list[str] = Field(default_factory=list)

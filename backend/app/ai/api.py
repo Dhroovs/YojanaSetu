@@ -1,4 +1,5 @@
 import asyncio
+import hashlib
 import logging
 import re
 import time
@@ -44,8 +45,19 @@ def make_router(settings, dev_access):
         return request.app.state.ai_service
 
     async def authorize(
-        request: Request, x_session_key: str = Header(default=""), _=Depends(dev_access)
+        request: Request,
+        x_session_key: str = Header(default=""),
+        authorization: str = Header(default=""),
+        x_dev_token: str = Header(default=""),
     ):
+        if authorization:
+            from app.auth import current_actor
+
+            await current_actor(request, authorization)
+            owner_key = hashlib.sha256(authorization.encode()).hexdigest()
+        else:
+            dev_access(x_dev_token)
+            owner_key = x_session_key
         if not re.fullmatch(r"[a-zA-Z0-9_-]{32,128}", x_session_key):
             raise HTTPException(401, "An independent browser session key is required.")
         # Per-IP admission rate, in addition to bounded in-flight matching concurrency.
@@ -59,7 +71,7 @@ def make_router(settings, dev_access):
                 429, "Too many requests. Please wait one minute.", headers={"Retry-After": "60"}
             )
         queue.append(now)
-        return x_session_key
+        return owner_key
 
     async def run(body, request, session_key):
         try:

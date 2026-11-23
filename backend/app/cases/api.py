@@ -224,6 +224,35 @@ def make_case_router():
             change,
         )
 
+    @router.post("/cases/{case_id}/notices/{notice_id}/acknowledge", response_model=AssistanceCase)
+    async def acknowledge_notice(
+        case_id: str,
+        notice_id: str,
+        body: Change,
+        request: Request,
+        idempotency_key: str = Header(default=""),
+        actor=Depends(current_actor),
+    ):
+        runtime = await private_runtime(request)
+
+        async def change(case):
+            notice = next((n for n in case.notices if n.id == notice_id and n.delivered_at), None)
+            if not notice:
+                raise HTTPException(404, "Delivered notice not found.")
+            if actor.id not in notice.acknowledged_by:
+                notice.acknowledged_by.append(actor.id)
+                runtime.cases.event(case, actor, "notice_acknowledged")
+
+        return await runtime.cases.mutate(
+            case_id,
+            actor,
+            body.revision,
+            idempotency_key,
+            "notice_acknowledge",
+            {"notice_id": notice_id},
+            change,
+        )
+
     @router.post("/cases/{case_id}/preferences", response_model=AssistanceCase)
     async def preferences(
         case_id: str,

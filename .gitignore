@@ -12,3 +12,12 @@ coverage/
 .tools/
 *.tsbuildinfo
 backend/data/
+/data/
+backups/
+artifacts/
+.aws/
+.codex/
+*.pem
+*.key
+*.p12
+*.pfx

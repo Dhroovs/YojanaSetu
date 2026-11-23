@@ -4,7 +4,7 @@ from types import SimpleNamespace
 from fastapi import HTTPException
 
 from app.agents.case_agents import FollowUpAgent
-from app.cases.models import Actor, Event, Preferences, UserRole, now_utc
+from app.cases.models import Actor, CaseNotice, Event, Preferences, UserRole, now_utc
 from app.cases.service import fingerprint
 from app.seva.models import TERMINAL, VisitStage
 
@@ -35,10 +35,13 @@ async def sync_case(service, booking):
         {
             "$push": {
                 "activity": event.model_dump(mode="python"),
+                "notices": CaseNotice(
+                    event_id=event.id, action=event.action, due_at=now_utc()
+                ).model_dump(mode="python"),
                 "operations": {"key": key, "action": "seva_completion", "fingerprint": key},
             },
             "$inc": {"revision": 1},
-            "$set": {"updated_at": now_utc()},
+            "$set": {"updated_at": now_utc(), "next_automation_at": now_utc()},
         },
     )
     recorded = await service.store.db.assistance_cases.find_one(

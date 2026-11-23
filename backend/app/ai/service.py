@@ -9,6 +9,7 @@ from langsmith import tracing_context
 
 from app.agents.scheme_matcher import parse_profile
 from app.ai.models import MatchResponse, Profile
+from app.ai.providers import begin_model_usage, model_usage
 
 
 class MatcherService:
@@ -25,6 +26,7 @@ class MatcherService:
                 return await self._match(request, session_key)
 
     async def _match(self, request, session_key: str):
+        begin_model_usage()
         supplied_text = " ".join(
             [request.question, request.profile.state or "", request.profile.occupation or ""]
         )
@@ -84,4 +86,5 @@ class MatcherService:
             warnings=result["warnings"],
             mode=mode,
             trace=result["trace"],
+            model_usage=model_usage(),
         )

@@ -394,7 +394,7 @@ class SevaService:
             if not self.verified(worker, window.end):
                 continue
             account = await self.auth.user_by_id(worker["id"])
-            if not account or not account.get("active"):
+            if not account or not account.get("active") or account.get("role") != "worker":
                 continue
             if (
                 booking["category"] not in worker["categories"]
@@ -527,12 +527,16 @@ class SevaService:
             stage = VisitStage(b["stage"])
             is_owner = actor.role == UserRole.citizen and actor.id == b["owner_id"]
             is_worker = actor.role == UserRole.worker and actor.id == b["worker_id"]
-            if action in {"cancel", "reschedule"} and stage in {
-                VisitStage.in_progress,
-                VisitStage.completion_review,
-                VisitStage.completed,
-                VisitStage.followup,
-            }:
+            if action in {"cancel", "reschedule"} and (
+                b["outcome"]
+                or stage
+                in {
+                    VisitStage.in_progress,
+                    VisitStage.completion_review,
+                    VisitStage.completed,
+                    VisitStage.followup,
+                }
+            ):
                 raise HTTPException(
                     409, "Use problem reporting or follow-up for a started/completed visit."
                 )
@@ -543,6 +547,10 @@ class SevaService:
                     raise HTTPException(422, "Confirm taking responsibility for this request.")
                 b["coordinator_id"] = actor.id
             elif action == "approve":
+                if stage == VisitStage.escalated and (b["outcome"] or b["worker_id"]):
+                    raise HTTPException(
+                        409, "Resolve the active visit escalation before approving reassignment."
+                    )
                 if (
                     stage
                     not in {
@@ -703,9 +711,7 @@ class SevaService:
                     raise HTTPException(422, "Provide an internal problem description.")
                 self.escalate(
                     b,
-                    "disputed_completion"
-                    if stage in {VisitStage.completed, VisitStage.completion_review}
-                    else "citizen_problem",
+                    "disputed_completion" if b["outcome"] else "citizen_problem",
                 )
                 b["stage"] = VisitStage.escalated.value
             elif action == "no_show":

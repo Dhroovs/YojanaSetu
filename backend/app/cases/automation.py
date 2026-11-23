@@ -1,10 +1,11 @@
 from datetime import timedelta
+from types import SimpleNamespace
 
 from fastapi import HTTPException
 
 from app.agents.case_agents import DocumentVerifier, EscalationAgent, FollowUpAgent
-from app.cases.models import Actor, Reminder, ReviewStatus, Stage, UserRole, now_utc
-from app.cases.notifications import InAppDevelopmentNotifications
+from app.cases.models import TERMINAL, Actor, Reminder, ReviewStatus, Stage, UserRole, now_utc
+from app.cases.notifications import CASE_MESSAGES, InAppDevelopmentNotifications
 
 
 async def process_due(service, now=None, limit=100):
@@ -37,7 +38,11 @@ async def process_due(service, now=None, limit=100):
                 continue
             if not any(r.follow_up_id == followup.id for r in case.reminders):
                 reminder = Reminder(
-                    id=followup.id, follow_up_id=followup.id, reason=followup.reason, created_at=now
+                    id=followup.id,
+                    follow_up_id=followup.id,
+                    reason=followup.reason,
+                    created_at=now,
+                    message=CASE_MESSAGES[case.preferences.language],
                 )
                 case.reminders.append(reminder)
                 delivered.append(reminder)
@@ -45,8 +50,12 @@ async def process_due(service, now=None, limit=100):
             followup.status = "delivered"
         for trigger in EscalationAgent(service.settings).analyze(case, now)["triggers"]:
             service.escalate(case, actor, trigger["reason"], trigger["severity"], now)
-        if DocumentVerifier().analyze(case, now)["missing_item_ids"] and not any(
-            f.reason == "missing_documents" and f.status == "scheduled" for f in case.followups
+        if (
+            case.stage not in TERMINAL
+            and DocumentVerifier().analyze(case, now)["missing_item_ids"]
+            and not any(
+                f.reason == "missing_documents" and f.status == "scheduled" for f in case.followups
+            )
         ):
             service.schedule(
                 case,
@@ -55,6 +64,35 @@ async def process_due(service, now=None, limit=100):
                 now + timedelta(hours=service.settings.follow_up_interval_hours),
             )
         future = [f.due_at for f in case.followups if f.status == "scheduled"]
+        for notice in case.notices:
+            if notice.delivered_at or notice.due_at > now:
+                continue
+            last = max(
+                [
+                    time
+                    for time in [case.last_notice_at, *(r.created_at for r in case.reminders)]
+                    if time
+                ],
+                default=None,
+            )
+            allowed = FollowUpAgent().next_allowed(
+                SimpleNamespace(
+                    preferences=case.preferences,
+                    reminders=[SimpleNamespace(created_at=last)] if last else [],
+                ),
+                now,
+                service.settings.case_notification_interval_hours,
+            )
+            if not case.preferences.in_app:
+                notice.due_at = now + timedelta(days=1)
+            elif allowed > now:
+                notice.due_at = allowed
+            else:
+                # Generic localized text only; no case notes or citizen details leave the record.
+                notice.message = CASE_MESSAGES[case.preferences.language]
+                notice.delivered_at = now
+                case.last_notice_at = now
+        future.extend(n.due_at for n in case.notices if not n.delivered_at)
         case.next_automation_at = min([now + timedelta(hours=1), *future])
         case.updated_at, case.revision = now, revision + 1
         try:

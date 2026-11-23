@@ -1,3 +1,4 @@
+import { useLanguage } from './language';
 import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { privateApi, useAuth } from './auth';
@@ -81,8 +82,6 @@ const names: Record<string, string> = {
   accessibility_support: 'Accessibility support',
 };
 const readable = (value: string) => value.replaceAll('_', ' ');
-const time = (value: string) =>
-  new Date(value).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' });
 const iso = (value: string) => new Date(value).toISOString();
 
 function BookingPreferenceForm({
@@ -92,6 +91,8 @@ function BookingPreferenceForm({
   booking: Booking;
   onSave: (b: Booking) => void;
 }) {
+  const { tr } = useLanguage();
+
   const { token } = useAuth();
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
@@ -126,13 +127,14 @@ function BookingPreferenceForm({
         }
       }}
     >
-      <h2>Sharing & notification preferences</h2>
+      <h2>{tr('Sharing & notification preferences')}</h2>
       <p>
-        Withdrawing sharing consent cancels an active assignment. Quiet hours use India time; equal
-        start/end disables quiet hours.
+        {tr(
+          'Withdrawing sharing consent cancels an active assignment. Quiet hours use India time; equal start/end disables quiet hours.',
+        )}
       </p>
       <label>
-        Notification language
+        {tr('Notification language')}
         <select name="language" defaultValue={booking.language}>
           {['en', 'hi', 'te'].map((l) => (
             <option key={l}>{l}</option>
@@ -141,14 +143,14 @@ function BookingPreferenceForm({
       </label>
       <label className="check-label">
         <input type="checkbox" name="share" defaultChecked={booking.share_with_assigned_worker} />
-        Share necessary details with the assigned worker
+        {tr('Share necessary details with the assigned worker')}
       </label>
       <label className="check-label">
         <input type="checkbox" name="notify" defaultChecked={booking.preferences.in_app} />
-        Deliver in-app notices
+        {tr('Deliver in-app notices')}
       </label>
       <label>
-        Quiet hours start (0–23 IST)
+        {tr('Quiet hours start (0–23 IST)')}
         <input
           type="number"
           min={0}
@@ -158,7 +160,7 @@ function BookingPreferenceForm({
         />
       </label>
       <label>
-        Quiet hours end (0–23 IST)
+        {tr('Quiet hours end (0–23 IST)')}
         <input
           type="number"
           min={0}
@@ -168,9 +170,10 @@ function BookingPreferenceForm({
         />
       </label>
       <label className="check-label">
-        <input type="checkbox" name="confirm" required />I confirm these preference changes
+        <input type="checkbox" name="confirm" required />
+        {tr('I confirm these preference changes')}
       </label>
-      <button disabled={busy}>Save sharing & notification preferences</button>
+      <button disabled={busy}>{tr('Save sharing & notification preferences')}</button>
       {error && <p role="alert">{error}</p>}
     </form>
   );
@@ -183,6 +186,8 @@ function WorkerProfileEditor({
   profile: Worker;
   onSave: (w: Worker) => void;
 }) {
+  const { tr } = useLanguage();
+
   const { token } = useAuth();
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
@@ -195,7 +200,7 @@ function WorkerProfileEditor({
   };
   return (
     <details>
-      <summary>Edit profile and request reverification</summary>
+      <summary>{tr('Edit profile and request reverification')}</summary>
       <form
         key={profile.revision}
         onSubmit={async (e) => {
@@ -236,10 +241,10 @@ function WorkerProfileEditor({
           }
         }}
       >
-        <p>Material changes reset verification. Resolve reserved visits before editing.</p>
+        <p>{tr('Material changes reset verification. Resolve reserved visits before editing.')}</p>
         {Object.entries(fields).map(([key, label]) => (
           <label key={key}>
-            {label}
+            {tr(label)}
             <input
               name={key}
               maxLength={1000}
@@ -252,7 +257,7 @@ function WorkerProfileEditor({
           </label>
         ))}
         <label>
-          Capacity
+          {tr('Capacity')}
           <input name="capacity" type="number" min={1} max={20} defaultValue={profile.capacity} />
         </label>
         {Object.entries({
@@ -266,7 +271,7 @@ function WorkerProfileEditor({
           ],
         }).map(([key, values]) => (
           <fieldset key={key}>
-            <legend>{readable(key)}</legend>
+            <legend>{tr(readable(key))}</legend>
             {values.map((v) => (
               <label className="check-label" key={v}>
                 <input
@@ -275,23 +280,24 @@ function WorkerProfileEditor({
                   value={v}
                   defaultChecked={(profile[key as keyof Worker] as string[]).includes(v)}
                 />
-                {names[v] || readable(v)}
+                {tr(names[v] || readable(v))}
               </label>
             ))}
           </fieldset>
         ))}
         <label className="check-label">
           <input type="checkbox" name="active" defaultChecked={profile.active} />
-          Active for assignments after verification
+          {tr('Active for assignments after verification')}
         </label>
         <label>
-          Reason for profile change
+          {tr('Reason for profile change')}
           <textarea name="note" maxLength={600} required />
         </label>
         <label className="check-label">
-          <input type="checkbox" required />I confirm these changes and the need for reverification
+          <input type="checkbox" required />
+          {tr('I confirm these changes and the need for reverification')}
         </label>
-        <button disabled={busy}>Save profile for reverification</button>
+        <button disabled={busy}>{tr('Save profile for reverification')}</button>
         {error && <p role="alert">{error}</p>}
       </form>
     </details>
@@ -307,6 +313,8 @@ interface Organization {
   revision: number;
 }
 function OrganizationManager() {
+  const { tr } = useLanguage();
+
   const { user, token } = useAuth();
   const [rows, setRows] = useState<Organization[]>([]);
   const [error, setError] = useState('');
@@ -319,12 +327,12 @@ function OrganizationManager() {
   }, [user, token]);
   return (
     <section className="panel">
-      <h2>Service organizations</h2>
-      <p>Internal records do not establish government partnership.</p>
+      <h2>{tr('Service organizations')}</h2>
+      <p>{tr('Internal records do not establish government partnership.')}</p>
       {rows.map((o) => (
         <p key={o.id}>
-          {o.display_name} · {o.id} · {o.active ? 'Active' : 'Inactive'} ·{' '}
-          {o.verified_internally ? 'Internally reviewed' : 'Unverified'}{' '}
+          {o.display_name} · {o.id} · {o.active ? tr('Active') : tr('Inactive')} ·{' '}
+          {o.verified_internally ? tr('Internally reviewed') : tr('Unverified')}{' '}
           {user?.role === 'admin' && (
             <button
               disabled={busy}
@@ -351,12 +359,12 @@ function OrganizationManager() {
                 }
               }}
             >
-              {o.active ? 'Deactivate organization' : 'Activate organization'}
+              {o.active ? tr('Deactivate organization') : tr('Activate organization')}
             </button>
           )}
         </p>
       ))}
-      {rows.length === 0 && <p>No organizations recorded.</p>}
+      {rows.length === 0 && <p>{tr('No organizations recorded.')}</p>}
       {user?.role === 'admin' && (
         <form
           onSubmit={async (e) => {
@@ -383,25 +391,26 @@ function OrganizationManager() {
           }}
         >
           <label>
-            Organization name
+            {tr('Organization name')}
             <input name="name" required minLength={2} maxLength={100} />
           </label>
           <label>
-            Organization type
+            {tr('Organization type')}
             <select name="kind">
-              <option value="ngo">NGO</option>
-              <option value="service_partner">Service partner</option>
-              <option value="field_team">Field team</option>
+              <option value="ngo">{tr('NGO')}</option>
+              <option value="service_partner">{tr('Service partner')}</option>
+              <option value="field_team">{tr('Field team')}</option>
             </select>
           </label>
           <label className="check-label">
             <input type="checkbox" name="verified" />
-            Internal review completed
+            {tr('Internal review completed')}
           </label>
           <label className="check-label">
-            <input type="checkbox" required />I confirm the organization record
+            <input type="checkbox" required />
+            {tr('I confirm the organization record')}
           </label>
-          <button disabled={busy}>Create organization</button>
+          <button disabled={busy}>{tr('Create organization')}</button>
         </form>
       )}
       {error && <p role="alert">{error}</p>}
@@ -410,6 +419,8 @@ function OrganizationManager() {
 }
 
 export function SevaDashboard() {
+  const { tr, formatDate } = useLanguage();
+
   const { user, token } = useAuth();
   const navigate = useNavigate();
   const [rows, setRows] = useState<Page<Booking>>();
@@ -442,39 +453,40 @@ export function SevaDashboard() {
   return (
     <>
       <header className="page-title">
-        <div className="eyebrow">SEVASETU · AUTHORIZED IN-PERSON ASSISTANCE</div>
+        <div className="eyebrow">{tr('SEVASETU · AUTHORIZED IN-PERSON ASSISTANCE')}</div>
         <h1>
           {user.role === 'worker'
-            ? 'My assigned visits'
+            ? tr('My assigned visits')
             : staff
               ? 'Doorstep coordination'
               : 'Help closer to home'}
         </h1>
         <p>
-          No government affiliation, MeeSeva authorization or scheme approval is implied.
-          Appointments require worker acceptance.
+          {tr(
+            'No government affiliation, MeeSeva authorization or scheme approval is implied. Appointments require worker acceptance.',
+          )}
         </p>
       </header>
       <div className="quick-actions">
         {user.role === 'citizen' && (
           <Link className="button" to="/seva/new">
-            Request doorstep assistance
+            {tr('Request doorstep assistance')}
           </Link>
         )}
         {user.role === 'worker' && (
           <Link className="button" to="/seva/profile">
-            My worker profile & availability
+            {tr('My worker profile & availability')}
           </Link>
         )}
         {staff && (
           <Link className="button" to="/seva/workers">
-            Worker verification & availability
+            {tr('Worker verification & availability')}
           </Link>
         )}
       </div>
       <div className="profile-grid">
         <label>
-          Status filter
+          {tr('Status filter')}
           <select
             value={stage}
             onChange={(e) => {
@@ -482,7 +494,7 @@ export function SevaDashboard() {
               setPage(1);
             }}
           >
-            <option value="">All authorized requests</option>
+            <option value="">{tr('All authorized requests')}</option>
             {[
               'pending_coordinator_review',
               'approved_for_assignment',
@@ -499,7 +511,7 @@ export function SevaDashboard() {
               'cancelled',
             ].map((s) => (
               <option key={s} value={s}>
-                {readable(s)}
+                {tr(readable(s))}
               </option>
             ))}
           </select>
@@ -514,7 +526,7 @@ export function SevaDashboard() {
                 setPage(1);
               }}
             />
-            Show minimal unclaimed request queue
+            {tr('Show minimal unclaimed request queue')}
           </label>
         )}
       </div>
@@ -525,42 +537,44 @@ export function SevaDashboard() {
           setRefresh((v) => v + 1);
         }}
       >
-        Refresh visits
+        {tr('Refresh visits')}
       </button>
       {error && (
         <p className="error" role="alert">
           {error}
         </p>
       )}
-      {!rows && !error && <p role="status">Loading authorized requests…</p>}
+      {!rows && !error && <p role="status">{tr('Loading authorized requests…')}</p>}
       {rows && (
         <>
-          <p>{rows.total} request(s)</p>
+          <p>
+            {rows.total} {tr(' request(s)')}
+          </p>
           {!unassigned && (
-            <section className="panel" aria-label="Appointment agenda">
-              <h2>Appointment agenda (current page, IST)</h2>
+            <section className="panel" aria-label={tr('Appointment agenda')}>
+              <h2>{tr('Appointment agenda (current page, IST)')}</h2>
               {rows.items
                 .filter((b) => b.appointment)
                 .sort((a, b) => a.appointment!.start.localeCompare(b.appointment!.start))
                 .map((b) => (
                   <p key={b.id}>
-                    {time(b.appointment!.start)}–{time(b.appointment!.end)} · {names[b.category]} ·{' '}
-                    {readable(b.stage)}
+                    {formatDate(b.appointment!.start)}–{formatDate(b.appointment!.end)} ·{' '}
+                    {tr(names[b.category])} · {tr(readable(b.stage))}
                   </p>
                 ))}
               {!rows.items.some((b) => b.appointment) && (
-                <p>No appointment windows on this page.</p>
+                <p>{tr('No appointment windows on this page.')}</p>
               )}
             </section>
           )}
           <div className="grid">
             {rows.items.map((b) => (
               <article className="card" key={b.id}>
-                <div className="eyebrow">{readable(b.stage)}</div>
-                <h2>{names[b.category]}</h2>
+                <div className="eyebrow">{tr(readable(b.stage))}</div>
+                <h2>{tr(names[b.category])}</h2>
                 {b.appointment && (
                   <p>
-                    {time(b.appointment.start)}–{time(b.appointment.end)} IST
+                    {formatDate(b.appointment.start)}–{formatDate(b.appointment.end)} {tr(' IST')}
                   </p>
                 )}
                 {unassigned ? (
@@ -586,26 +600,29 @@ export function SevaDashboard() {
                       }
                     }}
                   >
-                    Claim request with confirmation
+                    {tr('Claim request with confirmation')}
                   </button>
                 ) : (
                   <Link className="text-link" to={`/seva/requests/${b.id}`}>
-                    Open visit request →
+                    {tr('Open visit request →')}
                   </Link>
                 )}
               </article>
             ))}
           </div>
           {rows.total === 0 && (
-            <p>No requests in this queue. No availability or booking is assumed.</p>
+            <p>{tr('No requests in this queue. No availability or booking is assumed.')}</p>
           )}
           <div className="row pagination">
             <button disabled={page === 1} onClick={() => setPage((v) => v - 1)}>
-              Previous
+              {tr('Previous')}
             </button>
-            <span>Page {page}</span>
+            <span>
+              {tr('Page ')}
+              {page}
+            </span>
             <button disabled={page * 20 >= rows.total} onClick={() => setPage((v) => v + 1)}>
-              Next
+              {tr('Next')}
             </button>
           </div>
         </>
@@ -613,7 +630,7 @@ export function SevaDashboard() {
       {staff && (
         <p>
           <button className="secondary" onClick={() => navigate('/coordinator')}>
-            Open case assistance queue
+            {tr('Open case assistance queue')}
           </button>
         </p>
       )}
@@ -622,6 +639,8 @@ export function SevaDashboard() {
 }
 
 export function SevaRequestForm() {
+  const { tr } = useLanguage();
+
   const { user, token } = useAuth();
   const navigate = useNavigate();
   const [error, setError] = useState('');
@@ -629,15 +648,16 @@ export function SevaRequestForm() {
   const key = useRef(crypto.randomUUID());
   if (!user) return <AccessGate />;
   if (user.role !== 'citizen')
-    return <p role="alert">Citizens submit requests owned by their own account.</p>;
+    return <p role="alert">{tr('Citizens submit requests owned by their own account.')}</p>;
   return (
     <>
       <header className="page-title">
-        <div className="eyebrow">SEVASETU</div>
-        <h1>Request in-person guidance</h1>
+        <div className="eyebrow">{tr('SEVASETU')}</div>
+        <h1>{tr('Request in-person guidance')}</h1>
         <p>
-          Use synthetic details during development. Never enter Aadhaar, OTPs, bank credentials or
-          identity images.
+          {tr(
+            'Use synthetic details during development. Never enter Aadhaar, OTPs, bank credentials or identity images.',
+          )}
         </p>
       </header>
       <form
@@ -684,17 +704,17 @@ export function SevaRequestForm() {
         }}
       >
         <label>
-          Assistance category
+          {tr('Assistance category')}
           <select name="category">
             {Object.entries(names).map(([k, v]) => (
               <option key={k} value={k}>
-                {v}
+                {tr(v)}
               </option>
             ))}
           </select>
         </label>
         <label>
-          Known scheme identifier (optional)
+          {tr('Known scheme identifier (optional)')}
           <input
             name="scheme"
             maxLength={80}
@@ -702,7 +722,7 @@ export function SevaRequestForm() {
           />
         </label>
         <label>
-          My related case reference (optional)
+          {tr('My related case reference (optional)')}
           <input
             name="case"
             maxLength={80}
@@ -710,35 +730,36 @@ export function SevaRequestForm() {
           />
         </label>
         <label>
-          What help is needed?
+          {tr('What help is needed?')}
           <textarea name="description" minLength={5} maxLength={600} required />
         </label>
         <div className="profile-grid">
           <label>
-            Preferred start (your local time)
+            {tr('Preferred start (your local time)')}
             <input type="datetime-local" name="start" required />
           </label>
           <label>
-            Preferred end (15 minutes–4 hours later)
+            {tr('Preferred end (15 minutes–4 hours later)')}
             <input type="datetime-local" name="end" required />
           </label>
           {['district', 'mandal', 'village'].map((field) => (
             <label key={field}>
-              {readable(field)}
+              {tr(readable(field))}
               <input name={field} minLength={2} maxLength={80} required />
             </label>
           ))}
         </div>
         <label>
-          Address details for the assigned worker
+          {tr('Address details for the assigned worker')}
           <input name="address" minLength={5} maxLength={300} required />
         </label>
         <p>
-          Map coordinates are optional through the API with separate explicit consent; this form
-          does not request or track your device location.
+          {tr(
+            'Map coordinates are optional through the API with separate explicit consent; this form does not request or track your device location.',
+          )}
         </p>
         <label>
-          Preferred service language
+          {tr('Preferred service language')}
           <select name="language">
             <option value="en">English</option>
             <option value="hi">हिन्दी</option>
@@ -746,34 +767,35 @@ export function SevaRequestForm() {
           </select>
         </label>
         <p>
-          Worker language matching is supported; the interface and scheme explanations remain
-          primarily English.
+          {tr(
+            'Worker language matching is supported; the interface and scheme explanations remain primarily English.',
+          )}
         </p>
         <fieldset>
-          <legend>Accessibility support (optional)</legend>
+          <legend>{tr('Accessibility support (optional)')}</legend>
           {['wheelchair_access', 'hearing_support', 'reading_help', 'caregiver_support'].map(
             (a) => (
               <label className="check-label" key={a}>
                 <input type="checkbox" name="accessibility" value={a} />
-                {readable(a)}
+                {tr(readable(a))}
               </label>
             ),
           )}
         </fieldset>
         <label>
-          Will a caregiver or family member be present?
+          {tr('Will a caregiver or family member be present?')}
           <select name="caregiver">
-            <option value="">Not specified</option>
-            <option value="true">Yes</option>
-            <option value="false">No</option>
+            <option value="">{tr('Not specified')}</option>
+            <option value="true">{tr('Yes')}</option>
+            <option value="false">{tr('No')}</option>
           </select>
         </label>
-        <p>Contact preference: in-app only. No paid messaging is connected.</p>
+        <p>{tr('Contact preference: in-app only. No paid messaging is connected.')}</p>
         <label className="check-label">
-          <input type="checkbox" name="consent" required />I consent to sharing necessary booking
-          details with the assigned worker.
+          <input type="checkbox" name="consent" required />
+          {tr('I consent to sharing necessary booking details with the assigned worker.')}
         </label>
-        <button disabled={busy}>{busy ? 'Saving…' : 'Submit doorstep request'}</button>
+        <button disabled={busy}>{busy ? tr('Saving…') : tr('Submit doorstep request')}</button>
         {error && (
           <p className="error" role="alert">
             {error}
@@ -785,6 +807,8 @@ export function SevaRequestForm() {
 }
 
 export function SevaRequestDetail() {
+  const { tr, formatDate } = useLanguage();
+
   const { id } = useParams();
   const { user, token } = useAuth();
   const [booking, setBooking] = useState<Booking>();
@@ -849,7 +873,7 @@ export function SevaRequestDetail() {
         {error}
       </p>
     ) : (
-      <p role="status">Loading authorized visit…</p>
+      <p role="status">{tr('Loading authorized visit…')}</p>
     );
   const b = booking,
     staff = user.role === 'admin' || user.role === 'coordinator',
@@ -870,16 +894,20 @@ export function SevaRequestDetail() {
   return (
     <>
       <header className="page-title">
-        <div className="eyebrow">SEVASETU · INTERNAL ASSISTANCE</div>
-        <h1>{names[b.category]}</h1>
-        <p className="status-chip">{readable(b.stage)}</p>
-        <p>Reference {b.id}. A visit completion is not government approval or KYC.</p>
+        <div className="eyebrow">{tr('SEVASETU · INTERNAL ASSISTANCE')}</div>
+        <h1>{tr(names[b.category])}</h1>
+        <p className="status-chip">{tr(readable(b.stage))}</p>
+        <p>
+          {tr('Reference ')}
+          {b.id}
+          {tr('. A visit completion is not government approval or KYC.')}
+        </p>
       </header>
       <button
         className="secondary"
         onClick={() => void refresh().catch((e) => setError(e.message))}
       >
-        Refresh visit
+        {tr('Refresh visit')}
       </button>
       {error && (
         <p role="alert" className="error">
@@ -887,9 +915,12 @@ export function SevaRequestDetail() {
         </p>
       )}
       <section className="panel">
-        <h2>Booking details</h2>
+        <h2>{tr('Booking details')}</h2>
         {b.worker_display_name && (
-          <p>Assigned worker: {b.worker_display_name} (internal verification only)</p>
+          <p>
+            {tr('Assigned worker: ')}
+            {b.worker_display_name} {tr(' (internal verification only)')}
+          </p>
         )}
         <p>{b.description}</p>
         <p>
@@ -897,20 +928,22 @@ export function SevaRequestDetail() {
         </p>
         <p>{b.location.address}</p>
         <p>
-          Preferred: {time(b.preferred_window.start)}–{time(b.preferred_window.end)} IST
+          {tr('Preferred: ')}
+          {formatDate(b.preferred_window.start)}–{formatDate(b.preferred_window.end)} {tr(' IST')}
         </p>
         {b.appointment && (
           <p>
             {b.assignment_accepted
-              ? 'Confirmed appointment'
-              : 'Proposed appointment — worker acceptance pending'}
-            : {time(b.appointment.start)}–{time(b.appointment.end)} IST
+              ? tr('Confirmed appointment')
+              : tr('Proposed appointment — worker acceptance pending')}
+            : {formatDate(b.appointment.start)}–{formatDate(b.appointment.end)} {tr(' IST')}
           </p>
         )}
         {b.worker_id && (
           <p>
-            Assigned worker reference: {b.worker_id}. Internal verification is not government
-            certification.
+            {tr('Assigned worker reference: ')}
+            {b.worker_id}
+            {tr('. Internal verification is not government certification.')}
           </p>
         )}
         <button
@@ -932,14 +965,14 @@ export function SevaRequestDetail() {
             }
           }}
         >
-          Get grounded coordination guidance
+          {tr('Get grounded coordination guidance')}
         </button>
         <p aria-live="polite">{agent}</p>
       </section>
       <section className="panel">
-        <h2>Authorized actions</h2>
+        <h2>{tr('Authorized actions')}</h2>
         <label>
-          Visit / review / problem note
+          {tr('Visit / review / problem note')}
           <textarea maxLength={600} value={note} onChange={(e) => setNote(e.target.value)} />
         </label>
         <label className="check-label">
@@ -948,53 +981,55 @@ export function SevaRequestDetail() {
             checked={confirmed}
             onChange={(e) => setConfirmed(e.target.checked)}
           />
-          I explicitly confirm this cancellation, rescheduling, assignment or completion review.
+          {tr(
+            'I explicitly confirm this cancellation, rescheduling, assignment or completion review.',
+          )}
         </label>
         <div className="quick-actions">
           {staff && (
             <>
               <button disabled={busy} onClick={() => void action('no_worker_available')}>
-                Record no eligible worker available
+                {tr('Record no eligible worker available')}
               </button>
               <button disabled={busy} onClick={() => void action('approve')}>
-                Approve for internal assignment
+                {tr('Approve for internal assignment')}
               </button>
               <button disabled={busy || !note} onClick={() => void action('reject')}>
-                Reject with reason
+                {tr('Reject with reason')}
               </button>
               <button
                 disabled={busy || !note || !confirmed}
                 onClick={() => void action('confirm_completion')}
               >
-                Confirm reviewed visit completion
+                {tr('Confirm reviewed visit completion')}
               </button>
               <button
                 disabled={busy || !note || !confirmed}
                 onClick={() => void action('resolve_escalation')}
               >
-                Resolve internal escalation
+                {tr('Resolve internal escalation')}
               </button>
               <button disabled={busy || !confirmed || !note} onClick={() => void action('close')}>
-                Close reviewed visit
+                {tr('Close reviewed visit')}
               </button>
             </>
           )}
           {worker && (
             <>
               <button disabled={busy} onClick={() => void action('accept')}>
-                Accept proposed assignment
+                {tr('Accept proposed assignment')}
               </button>
               <button disabled={busy} onClick={() => void action('decline')}>
-                Decline assignment
+                {tr('Decline assignment')}
               </button>
               <button disabled={busy} onClick={() => void action('en_route')}>
-                Mark en route (no tracking)
+                {tr('Mark en route (no tracking)')}
               </button>
               <button disabled={busy} onClick={() => void action('check_in')}>
-                Check in
+                {tr('Check in')}
               </button>
               <label>
-                Tasks actually performed (required for outcome)
+                {tr('Tasks actually performed (required for outcome)')}
                 <input
                   maxLength={200}
                   value={performedTask}
@@ -1002,7 +1037,7 @@ export function SevaRequestDetail() {
                 />
               </label>
               <fieldset>
-                <legend>Services actually performed</legend>
+                <legend>{tr('Services actually performed')}</legend>
                 {Object.entries(names).map(([key, label]) => (
                   <label className="check-label" key={key}>
                     <input
@@ -1014,12 +1049,12 @@ export function SevaRequestDetail() {
                         )
                       }
                     />
-                    {label}
+                    {tr(label)}
                   </label>
                 ))}
               </fieldset>
               <label>
-                Documents assisted with (names only, comma-separated)
+                {tr('Documents assisted with (names only, comma-separated)')}
                 <input
                   maxLength={500}
                   value={documentsAssisted}
@@ -1039,7 +1074,7 @@ export function SevaRequestDetail() {
                   })
                 }
               >
-                Submit performed-service outcome for review
+                {tr('Submit performed-service outcome for review')}
               </button>
             </>
           )}
@@ -1049,7 +1084,7 @@ export function SevaRequestDetail() {
                 disabled={busy || !confirmed || !canChangeSchedule}
                 onClick={() => void action('cancel')}
               >
-                Cancel my request
+                {tr('Cancel my request')}
               </button>
               <button
                 disabled={
@@ -1057,19 +1092,19 @@ export function SevaRequestDetail() {
                 }
                 onClick={() => void action('citizen_confirm')}
               >
-                Confirm I received this assistance
+                {tr('Confirm I received this assistance')}
               </button>
             </>
           )}
           <button disabled={busy || !note} onClick={() => void action('report_problem')}>
-            Report a problem internally
+            {tr('Report a problem internally')}
           </button>
         </div>
         {(owner || staff) && (
           <>
             <div className="profile-grid">
               <label>
-                New proposed start (local time)
+                {tr('New proposed start (local time)')}
                 <input
                   type="datetime-local"
                   value={start}
@@ -1077,7 +1112,7 @@ export function SevaRequestDetail() {
                 />
               </label>
               <label>
-                New proposed end
+                {tr('New proposed end')}
                 <input type="datetime-local" value={end} onChange={(e) => setEnd(e.target.value)} />
               </label>
             </div>
@@ -1087,15 +1122,15 @@ export function SevaRequestDetail() {
                 void action('reschedule', { window: { start: iso(start), end: iso(end) } })
               }
             >
-              Request rescheduling; require acceptance again
+              {tr('Request rescheduling; require acceptance again')}
             </button>
           </>
         )}
         {staff && (
           <>
-            <h3>Eligible-worker shortlist</h3>
+            <h3>{tr('Eligible-worker shortlist')}</h3>
             <label>
-              Reason for choosing a lower ranked eligible worker (if applicable)
+              {tr('Reason for choosing a lower ranked eligible worker (if applicable)')}
               <input
                 maxLength={400}
                 value={overrideReason}
@@ -1103,18 +1138,20 @@ export function SevaRequestDetail() {
               />
             </label>
             <p>
-              Use the guidance button to load actual candidates for the preferred window. No
-              candidate is automatically booked.
+              {tr(
+                'Use the guidance button to load actual candidates for the preferred window. No candidate is automatically booked.',
+              )}
             </p>
             {candidates.map((c) => (
               <p key={c.worker_id}>
-                {c.display_name} · {c.workload} active reservations. {c.reasons.join('; ')}
+                {c.display_name} · {c.workload} {tr(' active reservations. ')}
+                {c.reasons.join('; ')}
               </p>
             ))}
             <label>
-              Choose eligible worker
+              {tr('Choose eligible worker')}
               <select value={selected} onChange={(e) => setSelected(e.target.value)}>
-                <option value="">Select a candidate</option>
+                <option value="">{tr('Select a candidate')}</option>
                 {candidates.map((c) => (
                   <option key={c.worker_id} value={c.worker_id}>
                     {c.display_name}
@@ -1145,33 +1182,36 @@ export function SevaRequestDetail() {
                 }
               }}
             >
-              Confirm assignment proposal
+              {tr('Confirm assignment proposal')}
             </button>
           </>
         )}
       </section>
       {b.outcome && (
         <section className="panel">
-          <h2>Recorded visit outcome</h2>
+          <h2>{tr('Recorded visit outcome')}</h2>
           <p>{b.outcome.note}</p>
-          <p>Performed: {b.outcome.services_performed.map((c) => names[c]).join(', ')}</p>
+          <p>
+            {tr('Performed: ')}
+            {b.outcome.services_performed.map((c) => names[c]).join(', ')}
+          </p>
           <p>
             {b.outcome.reviewed_by
-              ? 'Reviewed internally by coordinator'
-              : 'Awaiting coordinator review'}
+              ? tr('Reviewed internally by coordinator')
+              : tr('Awaiting coordinator review')}
           </p>
           <p>
             {b.citizen_confirmed
-              ? 'Citizen reported receiving assistance'
-              : 'Citizen confirmation not recorded'}
+              ? tr('Citizen reported receiving assistance')
+              : tr('Citizen confirmation not recorded')}
           </p>
         </section>
       )}
       {owner && ['visit_completed', 'follow_up_required', 'closed'].includes(b.stage) && (
         <section className="panel">
-          <h2>Feedback & follow-up</h2>
+          <h2>{tr('Feedback & follow-up')}</h2>
           <label>
-            Rating (1–5)
+            {tr('Rating (1–5)')}
             <input
               type="number"
               min={1}
@@ -1181,10 +1221,10 @@ export function SevaRequestDetail() {
             />
           </label>
           <button disabled={busy} onClick={() => void action('feedback', { rating })}>
-            Save feedback for reviewed visit
+            {tr('Save feedback for reviewed visit')}
           </button>
           <label>
-            Requested follow-up time
+            {tr('Requested follow-up time')}
             <input
               type="datetime-local"
               value={followup}
@@ -1195,12 +1235,12 @@ export function SevaRequestDetail() {
             disabled={busy || !followup || b.stage !== 'visit_completed'}
             onClick={() => void action('request_followup', { followup_at: iso(followup) })}
           >
-            Request follow-up after completion
+            {tr('Request follow-up after completion')}
           </button>
         </section>
       )}
       <section className="panel">
-        <h2>In-app updates</h2>
+        <h2>{tr('In-app updates')}</h2>
         {b.notifications
           .filter((n) => n.delivered_at)
           .map((n) => (
@@ -1222,26 +1262,30 @@ export function SevaRequestDetail() {
                   }
                 }}
               >
-                {n.acknowledged_by.includes(user.id) ? 'Acknowledged' : 'Acknowledge update'}
+                {n.acknowledged_by.includes(user.id)
+                  ? tr('Acknowledged')
+                  : tr('Acknowledge update')}
               </button>
             </div>
           ))}
       </section>
       {owner && <BookingPreferenceForm booking={b} onSave={setBooking} />}
       <section className="panel">
-        <h2>Request activity timeline</h2>
+        <h2>{tr('Request activity timeline')}</h2>
         <ol>
           {[...b.audit].reverse().map((e) => (
             <li key={e.id}>
-              <strong>{readable(e.action)}</strong>
-              <small>{time(e.at)} IST</small>
+              <strong>{tr(readable(e.action))}</strong>
+              <small>
+                {formatDate(e.at)} {tr(' IST')}
+              </small>
               <p>{e.note}</p>
             </li>
           ))}
         </ol>
         {b.escalations.map((e) => (
           <p key={e.id}>
-            {readable(e.reason)} · {e.status}
+            {tr(readable(e.reason))} · {e.status}
           </p>
         ))}
       </section>
@@ -1250,6 +1294,8 @@ export function SevaRequestDetail() {
 }
 
 export function SevaWorkerProfile() {
+  const { tr, formatDate } = useLanguage();
+
   const { user, token } = useAuth();
   const [profile, setProfile] = useState<Worker>();
   const [missing, setMissing] = useState(false);
@@ -1270,10 +1316,11 @@ export function SevaWorkerProfile() {
   return (
     <>
       <header className="page-title">
-        <h1>Worker profile & calendar</h1>
+        <h1>{tr('Worker profile & calendar')}</h1>
         <p>
-          Declared availability is not a confirmed appointment. Only administrators verify worker
-          eligibility.
+          {tr(
+            'Declared availability is not a confirmed appointment. Only administrators verify worker eligibility.',
+          )}
         </p>
       </header>
       {error && (
@@ -1285,15 +1332,16 @@ export function SevaWorkerProfile() {
         <section className="panel">
           <h2>{profile.display_name}</h2>
           <p>
-            {readable(profile.verification_status)} · {profile.verification_label}
+            {tr(readable(profile.verification_status))} · {profile.verification_label}
           </p>
           <p>
-            {profile.current_workload} active reservations / capacity {profile.capacity}
+            {profile.current_workload} {tr(' active reservations / capacity ')}
+            {profile.capacity}
           </p>
-          <h3>Declared calendar windows (IST)</h3>
+          <h3>{tr('Declared calendar windows (IST)')}</h3>
           {profile.availability.map((s, i) => (
             <p key={i}>
-              {time(s.start)}–{time(s.end)}
+              {formatDate(s.start)}–{formatDate(s.end)}
               <button
                 disabled={busy}
                 onClick={async () => {
@@ -1320,7 +1368,7 @@ export function SevaWorkerProfile() {
                   }
                 }}
               >
-                Remove availability window
+                {tr('Remove availability window')}
               </button>
             </p>
           ))}
@@ -1345,7 +1393,7 @@ export function SevaWorkerProfile() {
             }}
           >
             <label>
-              Available start (local time)
+              {tr('Available start (local time)')}
               <input
                 type="datetime-local"
                 required
@@ -1354,7 +1402,7 @@ export function SevaWorkerProfile() {
               />
             </label>
             <label>
-              Available end (up to 4 hours)
+              {tr('Available end (up to 4 hours)')}
               <input
                 type="datetime-local"
                 required
@@ -1362,7 +1410,7 @@ export function SevaWorkerProfile() {
                 onChange={(e) => setEnd(e.target.value)}
               />
             </label>
-            <button disabled={busy}>Add declared availability window</button>
+            <button disabled={busy}>{tr('Add declared availability window')}</button>
           </form>
           <WorkerProfileEditor profile={profile} onSave={setProfile} />
         </section>
@@ -1398,38 +1446,38 @@ export function SevaWorkerProfile() {
             }}
           >
             <label>
-              Display name
+              {tr('Display name')}
               <input name="name" minLength={2} maxLength={80} required />
             </label>
             <label>
-              Service role
+              {tr('Service role')}
               <select name="kind">
-                <option value="field_worker">Field worker</option>
-                <option value="ngo_volunteer">NGO volunteer</option>
+                <option value="field_worker">{tr('Field worker')}</option>
+                <option value="ngo_volunteer">{tr('NGO volunteer')}</option>
                 <option value="service_partner">
-                  Service partner (no official affiliation implied)
+                  {tr('Service partner (no official affiliation implied)')}
                 </option>
               </select>
             </label>
             <label>
-              Service districts (comma-separated)
+              {tr('Service districts (comma-separated)')}
               <input name="districts" required />
             </label>
             <label>
-              Assignment capacity
+              {tr('Assignment capacity')}
               <input type="number" name="capacity" min={1} max={20} defaultValue={5} />
             </label>
             <fieldset>
-              <legend>Service categories</legend>
+              <legend>{tr('Service categories')}</legend>
               {Object.entries(names).map(([k, v]) => (
                 <label className="check-label" key={k}>
                   <input name="category" type="checkbox" value={k} />
-                  {v}
+                  {tr(v)}
                 </label>
               ))}
             </fieldset>
             <fieldset>
-              <legend>Languages</legend>
+              <legend>{tr('Languages')}</legend>
               {['en', 'hi', 'te'].map((l) => (
                 <label className="check-label" key={l}>
                   <input name="language" type="checkbox" value={l} />
@@ -1438,17 +1486,17 @@ export function SevaWorkerProfile() {
               ))}
             </fieldset>
             <fieldset>
-              <legend>Accessibility capabilities</legend>
+              <legend>{tr('Accessibility capabilities')}</legend>
               {['reading_help', 'wheelchair_access', 'hearing_support', 'caregiver_support'].map(
                 (l) => (
                   <label className="check-label" key={l}>
                     <input name="capability" type="checkbox" value={l} />
-                    {readable(l)}
+                    {tr(readable(l))}
                   </label>
                 ),
               )}
             </fieldset>
-            <button disabled={busy}>Submit profile for internal verification</button>
+            <button disabled={busy}>{tr('Submit profile for internal verification')}</button>
           </form>
         )
       )}
@@ -1457,6 +1505,8 @@ export function SevaWorkerProfile() {
 }
 
 export function SevaWorkers() {
+  const { tr, formatDate } = useLanguage();
+
   const { user, token } = useAuth();
   const [rows, setRows] = useState<Worker[]>([]);
   const [error, setError] = useState('');
@@ -1480,14 +1530,15 @@ export function SevaWorkers() {
   return (
     <>
       <header className="page-title">
-        <h1>Worker verification & workload</h1>
+        <h1>{tr('Worker verification & workload')}</h1>
         <p>
-          Internal verification is not MeeSeva authorization or government certification. Only
-          administrators can approve verification.
+          {tr(
+            'Internal verification is not MeeSeva authorization or government certification. Only administrators can approve verification.',
+          )}
         </p>
       </header>
       <label>
-        Verification filter
+        {tr('Verification filter')}
         <select
           value={statusFilter}
           onChange={(e) => {
@@ -1504,7 +1555,7 @@ export function SevaWorkers() {
             'expired',
           ].map((s) => (
             <option key={s} value={s}>
-              {s ? readable(s) : 'All workers'}
+              {s ? readable(s) : tr('All workers')}
             </option>
           ))}
         </select>
@@ -1517,15 +1568,15 @@ export function SevaWorkers() {
       {user.role === 'admin' && (
         <section className="panel">
           <label>
-            Verification review note
+            {tr('Verification review note')}
             <textarea value={note} maxLength={600} onChange={(e) => setNote(e.target.value)} />
           </label>
           <label>
-            Reviewed authorization evidence URL (required for authorization confirmed)
+            {tr('Reviewed authorization evidence URL (required for authorization confirmed)')}
             <input type="url" value={evidence} onChange={(e) => setEvidence(e.target.value)} />
           </label>
           <label>
-            Verification expiry (local time)
+            {tr('Verification expiry (local time)')}
             <input
               type="datetime-local"
               value={expiry}
@@ -1538,7 +1589,7 @@ export function SevaWorkers() {
               checked={confirmed}
               onChange={(e) => setConfirmed(e.target.checked)}
             />
-            I confirm this internal verification review.
+            {tr('I confirm this internal verification review.')}
           </label>
         </section>
       )}
@@ -1547,11 +1598,12 @@ export function SevaWorkers() {
           <article className="card" key={w.id}>
             <h2>{w.display_name}</h2>
             <p>
-              {readable(w.verification_status)} · {w.current_workload}/{w.capacity} reservations
+              {tr(readable(w.verification_status))} · {w.current_workload}/{w.capacity}{' '}
+              {tr(' reservations')}
             </p>
             {w.availability.map((s, i) => (
               <p key={i}>
-                {time(s.start)}–{time(s.end)} IST
+                {formatDate(s.start)}–{formatDate(s.end)} {tr(' IST')}
               </p>
             ))}
             {user.role === 'admin' && (
@@ -1584,7 +1636,7 @@ export function SevaWorkers() {
                         }
                       }}
                     >
-                      {readable(status)}
+                      {tr(readable(status))}
                     </button>
                   ),
                 )}
@@ -1594,17 +1646,22 @@ export function SevaWorkers() {
         ))}
       </div>
       {rows.length === 0 && (
-        <p>No worker profiles available. Workers must submit their profiles before verification.</p>
+        <p>
+          {tr(
+            'No worker profiles available. Workers must submit their profiles before verification.',
+          )}
+        </p>
       )}
       <div className="row">
         <button disabled={page === 1} onClick={() => setPage((v) => v - 1)}>
-          Previous workers
+          {tr('Previous workers')}
         </button>
         <span>
-          Page {page}, {total} workers
+          {tr('Page ')}
+          {page}, {total} {tr(' workers')}
         </span>
         <button disabled={page * 20 >= total} onClick={() => setPage((v) => v + 1)}>
-          Next workers
+          {tr('Next workers')}
         </button>
       </div>
       <OrganizationManager />

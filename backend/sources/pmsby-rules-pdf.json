@@ -1,0 +1,18 @@
+{
+  "source_id": "pmsby-official-rules-pdf",
+  "scheme_id": "pmsby",
+  "scheme_name": "Pradhan Mantri Suraksha Bima Yojana (PMSBY)",
+  "department": "Department of Financial Services, Ministry of Finance",
+  "scope": "central",
+  "geographic_coverage": ["India"],
+  "category": "Insurance",
+  "official_url": "https://jansuraksha.gov.in/Files/PMSBY/English/Rules.pdf",
+  "document_title": "PMSBY official rules, effective from 1 June 2022",
+  "published_at": null,
+  "reviewed_at": "2026-11-23",
+  "verification_status": "verified",
+  "completeness": "partial",
+  "required_documents": ["PMSBY enrolment / auto-debit authorization form"],
+  "rules": [],
+  "field_evidence": {"required_documents": "Enrolment form / Auto-debit authorization in the prescribed proforma shall be obtained and retained by the participating bank/ Post office."}
+}
