@@ -1,0 +1,24 @@
+{
+  "source_id": "pm-kisan-portal",
+  "scheme_id": "pm-kisan",
+  "scheme_name": "Pradhan Mantri Kisan Samman Nidhi (PM-KISAN)",
+  "department": "Department of Agriculture and Farmers Welfare, Ministry of Agriculture and Farmers Welfare",
+  "scope": "central",
+  "geographic_coverage": ["India"],
+  "category": "Agriculture",
+  "official_url": "https://pmkisan.gov.in/",
+  "document_title": "PM-Kisan Samman Nidhi — official portal, scheme and exclusions",
+  "published_at": "2025-06-20",
+  "reviewed_at": "2026-11-16",
+  "verification_status": "verified",
+  "completeness": "partial",
+  "rules": [
+    {
+      "field": "institutional_landholder",
+      "operator": "eq",
+      "value": false,
+      "source_id": "pm-kisan-portal",
+      "quote": "All Institutional Land holders."
+    }
+  ]
+}

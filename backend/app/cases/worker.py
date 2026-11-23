@@ -1,0 +1,55 @@
+import argparse
+import asyncio
+import logging
+
+from pymongo import AsyncMongoClient
+
+from app.cases.automation import process_due, purge_expired
+from app.cases.runtime import PrivateRuntime
+from app.config import Settings
+
+
+async def run(args):
+    settings = Settings()
+    async with AsyncMongoClient(
+        settings.mongodb_uri, serverSelectionTimeoutMS=3000, tz_aware=True
+    ) as client:
+        runtime = PrivateRuntime(client[settings.mongodb_database], settings)
+        await runtime.initialize()
+        while True:
+            try:
+                count = await process_due(runtime.cases, limit=args.limit)
+                purged = (
+                    await purge_expired(runtime.cases, limit=args.limit)
+                    if args.purge_expired
+                    else 0
+                )
+                logging.info(
+                    "Durable case sweep processed=%s retention_processed=%s", count, purged
+                )
+            except Exception as exc:
+                logging.error(
+                    "Worker sweep failed (%s); durable jobs remain for retry", type(exc).__name__
+                )
+                if args.once:
+                    raise SystemExit(1) from exc
+            if args.once:
+                return
+            await asyncio.sleep(args.poll_seconds)
+
+
+def main():
+    parser = argparse.ArgumentParser(description="Mongo-backed in-app reminder/escalation worker")
+    parser.add_argument("--once", action="store_true")
+    parser.add_argument("--purge-expired", action="store_true")
+    parser.add_argument("--poll-seconds", type=int, default=30)
+    parser.add_argument("--limit", type=int, default=100)
+    args = parser.parse_args()
+    if not 5 <= args.poll_seconds <= 3600 or not 1 <= args.limit <= 500:
+        parser.error("poll-seconds must be 5–3600 and limit 1–500")
+    logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
+    asyncio.run(run(args))
+
+
+if __name__ == "__main__":
+    main()
