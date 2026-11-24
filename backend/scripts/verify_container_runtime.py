@@ -39,7 +39,7 @@ def execute(code):
     )
 
 
-def main():
+def wait_ready():
     for _ in range(45):
         try:
             request("GET", "/api/ready")
@@ -48,6 +48,10 @@ def main():
             time.sleep(2)
     else:
         raise RuntimeError("Compose readiness failed")
+
+
+def main():
+    wait_ready()
     with urlopen(BASE + "/", timeout=20) as response:
         assert response.status == 200 and b"<html" in response.read().lower()
     credentials = {"username": "ci-" + secrets.token_hex(8), "password": secrets.token_urlsafe(24)}
@@ -65,7 +69,13 @@ def main():
     )
     subprocess.run(["docker", "compose", "restart", "backend", "worker"], check=True)
     subprocess.run(["docker", "compose", "up", "-d", "--wait", "--wait-timeout", "180"], check=True)
-    request("GET", "/api/ready")
+    wait_ready()
+    # Replacement may change the Docker service IP; the proxy must resolve it again.
+    subprocess.run(
+        ["docker", "compose", "up", "-d", "--no-deps", "--force-recreate", "backend", "worker"],
+        check=True,
+    )
+    wait_ready()
     token = request("POST", "/api/auth/login", credentials)["access_token"]
     execute(
         "from pathlib import Path; import chromadb; "
