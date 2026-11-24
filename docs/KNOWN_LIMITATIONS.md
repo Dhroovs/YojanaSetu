@@ -1,5 +1,10 @@
 # Known limitations and release gates
 
+Current closure: the approved static interview showcase is live at
+https://dhroovs.github.io/YojanaSetu/ . It is screenshot/code evidence, not a live
+backend. The full local platform and GitHub main push are verified; see
+FINAL_RELEASE_REPORT.md for exact current CI results and release limitations.
+
 ## Strictly free hosting
 
 FREE_HOSTING_REVIEW.md establishes no reliable fit among reviewed no-card/INR0
@@ -11,8 +16,9 @@ Current push/publication results are in FINAL_RELEASE_REPORT.md.
    upstream HTTP-server high/critical advisories. This app has no Chroma server entry
    point, but no package fix is available at verification time. CI deliberately flags
    the dependency. Do not expose Chroma or publicly release without resolving/reviewing it.
-2. **Container/CI runtime unverified:** Docker is absent; only YAML parsing and native
-   Windows runs were performed. GitHub Actions files exist but have not been pushed/run.
+2. **Full production operations unverified:** local Docker is absent, but remote Linux
+   CI passed builds, startup, auth/proxy, worker and restart/replacement persistence.
+   Fresh-container official RAG/model setup and full backup restore still need verification.
 3. **Live LLM unverified:** no local Ollama server is available. Working mode is local
    ONNX embeddings with retrieval-only grounded guidance. Hosted calls remain disabled;
    mock token/transport tests are not live inference. No API credits were assumed.

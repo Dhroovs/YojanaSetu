@@ -1,13 +1,14 @@
 # Final demonstration and release report
 
-Verification date: 23 November 2026. Baseline: `f631208`.
+Local verification: 23 November 2026; final push/publication closure: 24 November 2026.
+Baseline: `f631208`.
 Repository confirmed by owner: https://github.com/Dhroovs/YojanaSetu, branch `main`,
 existing public visibility unchanged. Repository API confirms push permission; no
 unrelated remote branches/commits were present during preparation.
 
 **Overall: Verified Working locally; complete public backend deployment is Blocked
-by External Dependency.** No complete live application URL is claimed. Publication
-of a separate static interview showcase is awaiting the owner's answer. No paid plan,
+by External Dependency.** No complete live application URL is claimed. The separate static interview showcase
+is **Verified Working** at https://dhroovs.github.io/YojanaSetu/ . No paid plan,
 credit card, trial, paid model, SMS/WhatsApp send or billable resource was used.
 
 ## Actual local application
@@ -29,20 +30,20 @@ credit card, trial, paid model, SMS/WhatsApp send or billable resource was used.
 | Frontend Vitest | Verified Working | **25 passed, 9 files, 0 failed, 0 skipped in 1.85 seconds** |
 | Frontend ESLint | Verified Working | Exit 0 |
 | TypeScript + production Vite build | Verified Working | Exit 0; 33 modules, final Vite 890ms |
-| Ruff lint/format | Verified Working | All checks passed; 69 files formatted |
+| Ruff lint/format | Verified Working | All checks passed; 70 files formatted |
 | Python package consistency | Verified Working | No broken requirements found |
 | npm audit | Verified Working | 0 vulnerabilities; 334 dependencies reported |
-| Python OSV audit | Blocked by External Dependency | Exit 1; chromadb1.5.9 has four GHSA findings plus four PYSEC aliases; 119 packages scanned |
+| Python OSV audit | Blocked by External Dependency | Exit 1; chromadb 1.5.9 has four GHSA findings plus four PYSEC aliases; 119 packages scanned |
 | Existing browser suites | Verified Working | All five scripts passed, zero JS page errors |
-| Real-source integration | Verified Working | PMSBY/Kalyana Lakshmi retrieval and citations; coverage3schemes/4sources; no LLM called |
+| Real-source integration | Verified Working | PMSBY/Kalyana Lakshmi retrieval and citations; coverage 3 schemes / 4 sources; no LLM called |
 | Persistent demo browser inspection | Verified Working | **16 screenshots**, real RAG/reminder/admin mutation and auth isolation; zero JS errors |
 | Simulated completed-visit fixture | Verified Working | Real API acceptance/en-route/check-in/outcome/human review/feedback persisted; explicitly no real service |
 | Local Docker/Compose runtime | Not Tested | Docker not installed at normal path or on PATH; YAML parsed previously |
 | Live Ollama/hosted LLM | Not Tested | Local `/api/tags` connection failed; hosted calls remain disabled |
 | Native microphone/playback | Not Tested | Mocked consent/controls and real unsupported-browser fallback only |
 
-The earlier 107-test run passed in149.60s before the new demo-only account regression
-was added. The final108 count supersedes it. Browser suites are
+The earlier 107-test run passed in 149.60s before the new demo-only account regression
+was added. The final 108 count supersedes it. Browser suites are
 `verify_browser`, `verify_phase2_browser`, `verify_phase3_browser`,
 `verify_phase4_browser`, and `verify_phase5_browser`. The first script also checks
 historical anonymous development paths and its legacy coordinator placeholder; it
@@ -75,7 +76,7 @@ tokens, contact details or real citizen data.
 | In-app notifications | Verified Working | Case/visit events, language preferences, durable outbox, replay/quiet-hour/frequency and acknowledgement tests |
 | WhatsApp/SMS | Blocked by External Dependency | Adapters mocked, credentials/templates/callbacks/live sending unconfigured. No paid calls or messages |
 | Real local/hosted model inference | Not Tested | No successful real model call; mock protocol/usage/fallback tests are not live inference |
-| Complete public hosted platform | Blocked by External Dependency | No reviewed no-card INR0 host meets current worker/persistence needs; Chroma advisory also blocks public backend release |
+| Complete public hosted platform | Blocked by External Dependency | No reviewed no-card INR 0 host meets current worker/persistence needs; Chroma advisory also blocks public backend release |
 
 Three agent capabilities are deterministic case-graph nodes, not five independent
 model conversations. Actor-authorized shared case context and explicit human gates
@@ -118,12 +119,14 @@ but the installed package is not patched. Do not waive the CI gate or call it se
 ## GitHub, deployment and cost boundaries
 
 Push destination explicitly confirmed: `https://github.com/Dhroovs/YojanaSetu.git`,
-`main`, no force push, no visibility change. Final push verification and remote CI
-outcomes will be appended after execution; no success is inferred before then.
+`main`, no force push, no visibility change. The project push succeeded at `e02182777402ce5623d3c778f68e3b27cfa6f323`,
+followed by runtime CI verification commit `5a0a1694d7cb94a3305938833f91b77b35a8eccb`.
+Remote branch identity was checked after push. The final documentation-only commit
+may follow these release commits; use `git rev-parse origin/main` for the current tip.
 
 [FREE_HOSTING_REVIEW.md](FREE_HOSTING_REVIEW.md) compares official current restrictions.
-Recommendation is complete local synthetic walkthrough plus, if approved, a clearly
-labeled GitHub Pages screenshot/code showcase. It is not a mock backend or full hosted
+Recommendation is complete local synthetic walkthrough plus the approved, clearly
+labeled GitHub Pages screenshot/code showcase, now published and verified. It is not a mock backend or full hosted
 application. No public backend/tunnel or external database was provisioned.
 
 Architecture for a future full deployment remains frontend reverse proxy, FastAPI,
@@ -139,8 +142,52 @@ Keep the PC awake/online for local walkthroughs. Do not expose seeded admin cred
 copy the demo database into production, disable the advisory gate, or remove source
 limitations to make the interview look more complete.
 
-Remaining external decisions: approve the separate static showcase if desired; resolve
+Remaining external decisions: resolve
 upstream Chroma risk before exposing the backend; obtain a genuinely suitable persistent
 host or separately approve a future budget; test native speech and translations with
 target users. Any paid provider/model/messaging action still needs separate approval.
-No Phase6 was started. The full functional local demo is available for inspection.
+No Phase 6 was started. The full functional local demo is available for inspection.
+
+
+## Observed publication and remote verification
+
+- Public showcase: **https://dhroovs.github.io/YojanaSetu/**, HTTPS enforced,
+  GitHub Pages source main:/docs, build status built, HTTP 200.
+- Live Chrome checks: 16 image HTTP 200 checks, four filter states, 390px mobile width,
+  zero JavaScript errors, no login forms and no backend API calls.
+- Full local application after restart: frontend, readiness and API docs all HTTP 200.
+  Existing synthetic data and encrypted passwords were preserved; services are running.
+- Initial public GitHub CI run 45233487891: frontend success, Linux container build
+  success; backend 108 passed in 26.02s and pip consistency passed. The backend job then
+  failed only at the unchanged Chroma advisory gate.
+- Runtime CI run: https://github.com/Dhroovs/YojanaSetu/actions/runs/45315099259 .
+  This run caught an HTTP502 proxy recovery failure after restart. The proxy now
+  refreshes Docker service DNS and the smoke test waits for proxy readiness, then also
+  replaces backend/worker containers to verify recovery with changed service addresses.
+  The corrected run is linked below; no failing assertion was removed.
+- Static hosting and standard public-repository CI use the existing GitHub account;
+  no card, paid trial, subscription, provider account or usage-based service was added.
+
+The complete public application remains Blocked by External Dependency, independently
+of the successful static publication. No live hosted model or messaging is implied.
+
+
+## Final closure: 24 November 2026
+
+- Verified code/runtime commit: **26c4af5**. Final documentation-only commit follows
+  on main without changing application code; its exact tip is visible on GitHub.
+- Final CI: https://github.com/Dhroovs/YojanaSetu/actions/runs/45315579098 .
+  **Frontend: success. Containers: success. Backend: fails at the Chroma advisory gate
+  after all 108 tests passed in 27.71s, lint/format and pip consistency pass.** Overall CI remains red
+  deliberately; no advisory was suppressed.
+- Linux container runtime is now **Verified Working** for four-service startup,
+  same-origin frontend/API proxy, citizen registration/login, private-case access,
+  admin denial, logout revocation, running worker sweeps, and Mongo/private-file/
+  synthetic-vector persistence across restart and backend/worker replacement.
+  This does not claim official-source RAG/model inference inside a fresh container,
+  a full backup restore drill, or complete hosted production deployment.
+- Local Docker remains absent. Verification used free standard GitHub-hosted Linux
+  runners in the existing public repository, not a new cloud account or paid plan.
+- Chroma remains the only package finding in the final 24 November OSV scan of 119 pins.
+- The static HTTPS showcase is deployed and verified. The complete local platform is
+  restarted and ready for inspection. No additional automatic work or Phase 6 is planned.

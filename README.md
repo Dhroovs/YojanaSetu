@@ -5,13 +5,21 @@ TypeScript, FastAPI, MongoDB, LangGraph, local ONNX embeddings and Chroma retrie
 Five bounded agent workflows connect source-backed scheme guidance, private document
 assistance, durable follow-ups/escalation and consented doorstep visits.
 
-**Public release is blocked by unresolved upstream ChromaDB advisories.** The application
+**Public backend release is blocked by unresolved upstream ChromaDB advisories.** The application
 uses an embedded local client and does not expose Chroma HTTP endpoints, but no patched
-package version was available at verification. Docker/remote CI runtime, live LLM and
-native speech also remain explicitly unverified. This is not production certification,
-government authorization, an official MeeSeva partner or a publicly deployed service.
-No paid API call or cloud resource was used. See FINAL_RELEASE_REPORT.md for actual
+package version was available at verification. Remote Linux CI verified container
+startup, restart/replacement and persistence. Live LLM and native speech remain
+unverified. This is not production certification, government authorization, an official
+MeeSeva partner or a publicly deployed backend.
+No paid API call or cloud resource was used. See docs/FINAL_RELEASE_REPORT.md for actual
 GitHub/public-showcase results; no complete public backend is claimed.
+
+## Published interview showcase
+
+**https://dhroovs.github.io/YojanaSetu/** is a verified free static showcase with
+16 real synthetic workflow screenshots. It is not a publicly hosted backend.
+The complete code is pushed to this repository's main branch. See
+[the release report](docs/FINAL_RELEASE_REPORT.md) for CI results and remaining gates.
 
 ## Run locally
 

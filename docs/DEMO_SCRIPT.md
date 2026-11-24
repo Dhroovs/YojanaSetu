@@ -1,5 +1,10 @@
 # Synthetic citizen-to-coordinator-to-worker demo
 
+Current closure: the approved static interview showcase is live at
+https://dhroovs.github.io/YojanaSetu/ . It is screenshot/code evidence, not a live
+backend. The full local platform and GitHub main push are verified; see
+FINAL_RELEASE_REPORT.md for exact current CI results and release limitations.
+
 ## Ready-to-inspect synthetic walkthrough
 
 The running demo and secure role credentials are documented in LOCAL_DEMO_ACCESS.md.

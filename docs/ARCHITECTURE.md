@@ -1,5 +1,10 @@
 # Current architecture - Phase 5 local candidate
 
+Current closure: the approved static interview showcase is live at
+https://dhroovs.github.io/YojanaSetu/ . It is screenshot/code evidence, not a live
+backend. The full local platform and GitHub main push are verified; see
+FINAL_RELEASE_REPORT.md for exact current CI results and release limitations.
+
 ## Inspection runtime
 
 scripts.local_demo creates a separate synthetic Mongo database/private-file directory
@@ -65,7 +70,8 @@ requires consent and offers editable text fallback; native speech remains unveri
 Optional models and external messaging are disabled until configured and approved.
 
 Deployment manifests separate frontend proxy, backend, Mongo and worker, with named
-storage and health ordering. Docker/remote CI were not executed here. The app is a
+storage and health ordering. Local Docker is absent; final remote Linux CI verified build/startup/restart and
+persistence (see FINAL_RELEASE_REPORT.md). The app is a
 local candidate with explicit gates, not a production-certified or deployed service.
 
 Detailed references: AGENTS.md, RAG_PIPELINE.md, SEVASETU_WORKFLOW.md, DATABASE.md,

@@ -1,18 +1,24 @@
-# Deployment preparation - no deployment performed
+# Deployment and publication status
+
+Current closure: the approved static interview showcase is live at
+https://dhroovs.github.io/YojanaSetu/ . It is screenshot/code evidence, not a live
+backend. The full local platform and GitHub main push are verified; see
+FINAL_RELEASE_REPORT.md for exact current CI results and release limitations.
 
 ## Current release mission
 
 See FINAL_RELEASE_REPORT.md for actual push/publication/CI results. Under the owner's
 strict INR0/no-card/no-trial policy, consult FREE_HOSTING_REVIEW.md before provisioning.
 No reviewed host meets the full persistent native-runtime/worker requirements.
-A static showcase, if approved, is distinct from deploying the complete backend.
+The approved static showcase is distinct from deploying the complete backend.
 
 Dockerfiles, `compose.yaml`, Nginx same-origin proxy, health dependency ordering,
 named persistence volumes, non-root application users, a separate scheduler and
 GitHub Actions gates are authored. Compose and workflow YAML parsed successfully.
-**Docker is not installed in this environment:** no image build, Compose startup or
-Linux container workflow was executed here. Remote GitHub Actions was not run or pushed.
-Do not represent these configurations as runtime-verified.
+**Docker is not installed locally.** The final public GitHub Actions run45315579098
+verified Linux builds, all four Compose services, auth/proxy, worker sweeps and persistent
+Mongo/files/synthetic-vector data across restart and container replacement. Fresh
+container official RAG ingestion, real model calls and full backup restore remain unverified.
 
 Public release is additionally blocked by unpatched ChromaDB advisories; see SECURITY.md.
 The following is a local deployment rehearsal after installing Docker, not authorization
@@ -62,6 +68,10 @@ revoked after restore. No destructive migration was added in Phase 5.
 
 CI on push/PR runs backend/Mongo tests, frontend checks/build/audit and container builds.
 The Python advisory check is intentionally a failing gate while Chroma advisories remain.
-CI success has not been observed remotely. Before release, resolve or obtain independently
+Frontend and container CI passed remotely; backend tests passed before the intentionally
+failing advisory gate. Overall CI is not green. Before public backend release, resolve or obtain independently
 reviewed approval for that risk and verify container builds, health, persistence, restore,
 browser workflows and shutdown on the actual target.
+
+The static showcase at https://dhroovs.github.io/YojanaSetu/ is the only public deployment;
+it contains no backend login/forms/API calls. No billing/card/resource was added.

@@ -5,7 +5,7 @@
 FINAL_RELEASE_REPORT.md records108 backend and25 frontend passing tests and fresh
 browser evidence. scripts.verify_inspection_demo checks the running synthetic demo,
 actual scheduler delivery, private access denial and a synthetic admin review-note
-mutation. It produces16 screenshots. It needs local Windows DPAPI access and is not
+mutation. It produces 16 screenshots. It needs local Windows DPAPI access and is not
 a CI unit test. Never run scripts.local_demo access in captured CI/tool logs.
 
 Use synthetic data only. The backend suites use isolated test databases; real MongoDB
@@ -54,4 +54,9 @@ Final executed results and exact counts are in FINAL_HANDOFF.md. Browser results
 not formal WCAG certification. Mocked speech exercises consent/controls/fallback,
 not live microphone transcription. Model protocol/usage tests do not verify live LLM
 inference. Backup tests check synthetic Mongo/index/file fixtures, not production
-disaster recovery. Docker/remote CI remain explicitly unverified.
+disaster recovery. Final remote CI verified Linux container startup/proxy/auth and persistence across
+restart/replacement; overall CI still fails the dependency gate. See FINAL_RELEASE_REPORT.md.
+
+Container CI executes scripts/verify_container_runtime.py against disposable Compose
+services; no physical/official visit is implied. It checks a separate synthetic vector
+collection, not downloaded source embeddings or a production disaster-recovery drill.

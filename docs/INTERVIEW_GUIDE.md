@@ -1,5 +1,10 @@
 # Interview overview and technical questions
 
+Current closure: the approved static interview showcase is live at
+https://dhroovs.github.io/YojanaSetu/ . It is screenshot/code evidence, not a live
+backend. The full local platform and GitHub main push are verified; see
+FINAL_RELEASE_REPORT.md for exact current CI results and release limitations.
+
 ## Current demonstration evidence
 
 Use LOCAL_DEMO_ACCESS.md for the complete running local synthetic platform and

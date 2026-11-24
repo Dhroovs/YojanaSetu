@@ -1,10 +1,26 @@
 # Phase 5 final handoff
 
+## Closure completed 24 November 2026
+
+Public static showcase: https://dhroovs.github.io/YojanaSetu/ (HTTP200 and live Chrome
+checks passed). Confirmed GitHub main push; verified code/runtime commit26c4af5.
+Final documentation-only tip may follow. CI run45315579098 passed frontend and Linux
+container startup/restart/replacement/persistence checks. Backend108 tests passed;
+the overall run remains failing only at the unpatched Chroma dependency gate.
+The Nginx proxy recovery issue found during container smoke testing was fixed and
+retested successfully. No cloud costs, paid integrations or public backend were added.
+
+Local frontend http://localhost:5173/ and docs http://127.0.0.1:8000/docs were restarted
+and verified200; preserve the synthetic database/access files. Credentials are revealed
+only by the operator command in LOCAL_DEMO_ACCESS.md. Work is closed at the user's
+request; no background agent task or Phase6 is scheduled. The scheduler remains part
+of the local demonstration. FINAL_RELEASE_REPORT.md is the authoritative current report.
+
 ## Current final release mission checkpoint
 
 [FINAL_RELEASE_REPORT.md](FINAL_RELEASE_REPORT.md) supersedes historical Phase5
-counts below:108 backend tests passed in155.43s, frontend25 in1.85s, five Chrome
-regressions and16 persistent-demo screenshots passed with zero JS errors.
+counts below: 108 backend tests passed in 155.43s, frontend 25 in 1.85s, five Chrome
+regressions and 16 persistent-demo screenshots passed with zero JS errors.
 The frontend http://localhost:5173/ and API http://127.0.0.1:8000/docs are running,
 with Mongo and scheduler against a separate synthetic database. Read
 LOCAL_DEMO_ACCESS.md for Windows DPAPI-protected temporary access. Never run the
@@ -14,16 +30,17 @@ files, database and processes; do not delete/recreate them just to resume.
 The user confirmed pushing to Dhroovs/YojanaSetu, main, preserving public visibility.
 Existing authentication works; the remote was empty. Check FINAL_RELEASE_REPORT.md
 for observed push/CI outcomes before repeating a push. No force push is authorized.
-Static GitHub Pages showcase publication awaits the owner's reply. Do not infer
-approval from elapsed time. Budget is strictly INR0, no cards/trials/paid resources.
+The owner approved continuing closure. GitHub Pages static showcase is published
+and verified at https://dhroovs.github.io/YojanaSetu/ . Budget is strictly INR 0, no cards/trials/paid resources.
 FREE_HOSTING_REVIEW.md compares primary sources; no complete reliable hosted fit
-was established. Chroma remains the119-package OSV scan's only finding, still blocking
-public backend release. No public tunnel/backend or paid resource was created.
+was established. Chroma remains the 119-package OSV scan's only finding, still blocking
+public backend release. No public tunnel/backend or paid resource was created. Main was pushed at e021827
+and runtime verification at 5a0a169; the documentation-only closure commit may follow.
+The advisory gate intentionally remains failing; do not suppress it.
 
-Resume from current Git/remote/local health and complete only confirmed remaining
-push/publication/reporting. The demo includes a future assigned visit plus a separate
+Resume from current Git/remote/local health and preserve the completed push/publication evidence; no further implementation is requested. The demo includes a future assigned visit plus a separate
 reviewed, feedback-complete simulated visit; no real citizen data was used. Demo-only
-accounts reject login and existing sessions outside development. No Phase6.
+accounts reject login and existing sessions outside development. No Phase 6.
 
 ## Historical Phase5 closure evidence
 
