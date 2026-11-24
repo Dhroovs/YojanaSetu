@@ -1,78 +1,108 @@
-# Current architecture - Phase 5 local candidate
+# System architecture and request flow
 
-Current closure: the approved static interview showcase is live at
-https://dhroovs.github.io/YojanaSetu/ . It is screenshot/code evidence, not a live
-backend. The full local platform and GitHub main push are verified; see
-FINAL_RELEASE_REPORT.md for exact current CI results and release limitations.
-
-## Inspection runtime
-
-scripts.local_demo creates a separate synthetic Mongo database/private-file directory
-and copies only the public vector catalogue. Backend/frontend bind to loopback, with
-a separate worker started after fixture provisioning. Windows DPAPI protects random
-local role credentials. Demo-only accounts are rejected outside development. This
-does not alter production service boundaries or expose a public Chroma endpoint.
-
-This document replaces the historical Phase 1 architecture. Earlier Git commits and
-phase reports preserve that history. See FINAL_HANDOFF.md for observed results and
-SECURITY.md for the unresolved production dependency gate.
+The full application is a local integrated platform. The public [showcase](https://dhroovs.github.io/YojanaSetu/)
+serves static evidence only. Diagram arrows below describe implementation calls/data access, not a deployed
+cloud topology. Dotted integrations are optional/unconfigured; live inference and external delivery are unverified.
 
 ```mermaid
-flowchart LR
-  Citizen[Citizen browser] --> UI[React TypeScript Vite]
-  Staff[Worker Coordinator Admin] --> UI
-  UI --> API[FastAPI validation and authorization]
-  API --> Mongo[(MongoDB operational authority)]
-  API --> Graph[Controlled LangGraph workflows]
-  Graph --> Vectors[(Local Chroma reviewed evidence)]
-  Graph --> Model[Optional bounded model adapter]
-  Operator[Source review and ingestion CLI] --> Vectors
-  Operator --> Mongo
-  Worker[Durable scheduler process] --> Mongo
-  API --> Private[Private local document storage]
+flowchart TB
+  Citizen[Citizen interface] --> React[React / TypeScript / Router]
+  Field[Worker interface] --> React
+  Coord[Coordinator interface] --> React
+  Admin[Administrator interface] --> React
+  React --> HTTP[HTTP JSON and opaque bearer]
+  HTTP --> API[FastAPI main / auth / cases / seva / admin / ai routers]
+  API --> Auth[Current session / role / object authority]
+  Auth --> Domain[CaseService and SevaService]
+  Auth --> CaseGraph[CaseOrchestrator]
+  CaseGraph --> Matcher[Scheme Matcher graph]
+  CaseGraph --> Docs[Document Verifier node]
+  CaseGraph --> Follow[Follow-up node]
+  CaseGraph --> Esc[Escalation node]
+  CaseGraph --> Door[Doorstep Coordinator graph]
+  Docs --> Domain
+  Follow --> Domain
+  Esc --> Domain
+  Door --> Domain
+  Matcher --> RAG[Active evidence / curated rules / citation validation]
+  RAG --> Embed[Local ONNX MiniLM]
+  Embed --> Chroma[Embedded Chroma public vectors]
+  RAG --> Mongo[Mongo operational and source records]
+  Domain --> Mongo
+  Domain --> Files[Private document filesystem]
+  Worker[Separate durable polling worker] --> Domain
+  Worker --> Notice[Persisted in-app notifications]
+  Notice --> Mongo
+  RAG -. Optional gated transport .-> LLM[Local or approved hosted model]
+  Domain -. Adapter contracts only .-> External[Meta WhatsApp / Twilio SMS]
 ```
 
-Public discovery/source coverage is separate from private cases/visits. Individual
-opaque bearer sessions authorize matching, profiles, case records and staff actions.
-The legacy shared-development-token routes remain disabled in production. Public
-signup creates citizen accounts only; operators/admins control staff roles.
+## Plain-English responsibilities
 
-MongoDB stores users, sessions, source metadata, minimal conversation state, private
-case references, schedules/notices, visits, calendars and audit/receipts. Chroma stores
-public reviewed text/vectors only. It is an embedded PersistentClient, not a Chroma
-HTTP service. Private files are never mounted as public web assets.
+React presents forms and requests current data. TypeScript catches many development-time mistakes, but the
+server still validates every request. FastAPI dependencies resolve the current actor. Services enforce who may
+read/change a case or visit, which transitions are legal and what confirmations are required. Stores implement
+exact queries and revision/calendar authority. A graph coordinates tasks through those boundaries, not around them.
 
-Five bounded agent tasks route through typed LangGraph state. Deterministic rules
-control eligibility and assignments; human review gates consequential actions.
-Receipts/CAS and durable domain records provide retry state rather than raw prompt
-checkpoints. A completion outbox connects a reviewed visit to authorized case activity.
+Mongo holds users, hashed sessions, cases, visits, worker calendars, source metadata, audit, receipts and jobs.
+Chroma holds public source chunks/vectors, not private citizen uploads. File storage keeps bytes outside the
+public frontend tree. A separate worker polls persisted schedules rather than relying on browser timers.
+There is no Redis/Celery/Kubernetes/JWT service hidden in the architecture.
 
-```mermaid
-stateDiagram-v2
-  [*] --> DocumentsPending
-  DocumentsPending --> ReadyForHumanReview: reviewed checklist assistance
-  ReadyForHumanReview --> AssistanceInProgress: coordinator action
-  AssistanceInProgress --> WaitingForExternalUpdate
-  WaitingForExternalUpdate --> Completed: internal assistance complete
-  Completed --> Closed
-  DocumentsPending --> Escalated: explicit or configured trigger
-  Escalated --> DocumentsPending: authorized human resolution
+## A real request path: create a private case
+
+1. `PrivateDashboard` in [private-cases.tsx](../frontend/src/private-cases.tsx) submits a selected scheme and assistance type.
+2. [privateApi](../frontend/src/auth.tsx) sends POST, JSON, bearer and Idempotency-Key to `/api/cases`.
+3. [main.py](../backend/app/main.py) takes the authenticated path, resolves the actor and calls `CaseService.create`.
+4. [CaseService](../backend/app/cases/service.py) requires citizen role, derives ownership from the actor and creates the source-backed checklist.
+5. [CaseStore](../backend/app/cases/store.py) inserts the record. Its unique owner/creation-key index governs replay; changed-payload reuse fails.
+6. The response returns a case ID/revision/checklist. React renders the actual returned record; it does not manufacture a success card.
+
+Sanitized teaching request, not a credential or captured citizen record:
+
+```http
+POST /api/cases
+Authorization: Bearer <session-token>
+Idempotency-Key: <new-random-key>
+Content-Type: application/json
+
+{"scheme_id":"pmsby","assistance_type":"Document checklist help"}
 ```
 
-Case and SevaSetu visit states are distinct; neither is a government department's
-approval. Document checks address format/readability and internal checklist review,
-not authenticity or legal KYC. Notifications are generic and durable, with preferences,
-India-time quiet hours, deduplication and acknowledgement.
+The response includes fields such as `id`, `owner_id`, `scheme_id`, `revision`, `stage` and `checklist`.
+Read [the API examples](API_REFERENCE.md) for abridged JSON and role boundaries.
 
-Static English/Hindi/Telugu dictionaries and device/account language preferences are
-implemented. Official evidence is preserved in its source language. Browser speech
-requires consent and offers editable text fallback; native speech remains unverified.
-Optional models and external messaging are disabled until configured and approved.
+## Two other interactions
 
-Deployment manifests separate frontend proxy, backend, Mongo and worker, with named
-storage and health ordering. Local Docker is absent; final remote Linux CI verified build/startup/restart and
-persistence (see FINAL_RELEASE_REPORT.md). The app is a
-local candidate with explicit gates, not a production-certified or deployed service.
+**Ask the matcher:** Assistant sends the minimal question/profile plus an independent session key. The AI
+service owns bounded per-conversation work, merges explicit profile corrections and invokes SchemeMatcher.
+The vector index retrieves active verified chunks. Curated rules and citation validation produce structured
+preliminary guidance. The verified mode does not call a live LLM. Minimal profile/scheme IDs can persist with TTL;
+raw prompts and full answers are not retained as conversation history.
 
-Detailed references: AGENTS.md, RAG_PIPELINE.md, SEVASETU_WORKFLOW.md, DATABASE.md,
-API_REFERENCE.md, SECURITY.md, DEPLOYMENT.md and TESTING.md.
+**Request a doorstep visit:** the citizen submits a structured category/location/window with consent. The
+coordinator claims/reviews the request. Candidate ranking is deterministic, while the assignment service rechecks
+eligibility and atomically reserves one worker calendar. The worker accepts before a confirmed appointment;
+check-in and outcome submission have stage/time guards. Coordinator completion review can enqueue an idempotent
+case activity update. A visit reference never grants unrestricted access to its linked case.
+
+## State and failure boundaries
+
+| State | Authority / lifetime | Failure behavior |
+| --- | --- | --- |
+| Form/loading/error | React component state | Reload can discard it; fetch authoritative records again |
+| Login | Opaque session hash in Mongo, token in tab memory | Runtime expiry, logout and auth_version revoke access |
+| Graph context/trace | Typed per-invocation state | No configured LangGraph saver; reload domain state on retry |
+| Case/visit/audit/receipts | Mongo record with revision | Stale writes fail409; receipts distinguish replay from changed payload |
+| Worker reservation | Atomic seva_workers calendar document | Conflicting reservations fail; standalone multi-record recovery is conservative |
+| Follow-up/notice/outbox | Persisted due/state data | Worker downtime delays processing; retries inspect authoritative state |
+| Public evidence | Source hash/version plus Chroma vectors | Inactive/mismatched sources are rejected; partial/stale evidence stays uncertain |
+
+## Runtime and operations
+
+Native Windows uses loopback Mongo, FastAPI8000, Vite5173 and a separate worker. Local Compose uses Mongo,
+backend, worker and Nginx frontend8080, with named private/vector/data volumes and no public Mongo port.
+Remote Linux CI verified startup, proxy/auth and restart/replacement persistence with synthetic vectors/files.
+Docker is absent locally. Fresh-container official-source RAG/model setup and a complete production restore are
+not certified. [Deployment](DEPLOYMENT.md), [database](DATABASE.md), [security](SECURITY.md) and
+[the release report](FINAL_RELEASE_REPORT.md) define the current limits.

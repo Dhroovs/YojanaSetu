@@ -161,7 +161,7 @@ No Phase 6 was started. The full functional local demo is available for inspecti
   success; backend 108 passed in 26.02s and pip consistency passed. The backend job then
   failed only at the unchanged Chroma advisory gate.
 - Runtime CI run: https://github.com/Dhroovs/YojanaSetu/actions/runs/45315099259 .
-  This run caught an HTTP502 proxy recovery failure after restart. The proxy now
+  This run caught an HTTP 502 proxy recovery failure after restart. The proxy now
   refreshes Docker service DNS and the smoke test waits for proxy readiness, then also
   replaces backend/worker containers to verify recovery with changed service addresses.
   The corrected run is linked below; no failing assertion was removed.
@@ -191,3 +191,8 @@ of the successful static publication. No live hosted model or messaging is impli
 - Chroma remains the only package finding in the final 24 November OSV scan of 119 pins.
 - The static HTTPS showcase is deployed and verified. The complete local platform is
   restarted and ready for inspection. No additional automatic work or Phase 6 is planned.
+
+
+## Subsequent documentation and portfolio milestone
+
+The 24 November portfolio pass expands README/source guides, 110 interview Q&As, 20 walkthrough chapters, quick revision, glossary, timed demo and resume material. A 22-slide Markdown deck, editable HTML and verified 22-page PDF are supplied; no PowerPoint export is claimed. Three additional real public discovery/language/mobile screenshots supplement the 16 release inspection captures. Application behavior is unchanged (environment-example edits are comments only). See [documentation QA](DOCUMENTATION_QUALITY.md); the 108/25 recorded execution counts above keep their dates and are not claimed as a new full regression run.

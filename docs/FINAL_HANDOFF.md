@@ -1,8 +1,18 @@
 # Phase 5 final handoff
 
+## Portfolio documentation milestone
+
+The 24 November documentation milestone adds the recruiter README, 110 interview Q&As,
+20 learning chapters, quick revision/glossary/portfolio guides and a 22-slide Markdown/HTML/PDF
+presentation. Canonical source explanations are updated without changing application behavior.
+Read DOCUMENTATION_QUALITY.md for exact checks and export boundaries. Application verification
+remains the dated release evidence; native speech/live models/external messaging and the Chroma
+gate are not relabeled complete. The authorized push destination remains Dhroovs/YojanaSetu main,
+preserving visibility and license.
+
 ## Closure completed 24 November 2026
 
-Public static showcase: https://dhroovs.github.io/YojanaSetu/ (HTTP200 and live Chrome
+Public static showcase: https://dhroovs.github.io/YojanaSetu/ (HTTP 200 and live Chrome
 checks passed). Confirmed GitHub main push; verified code/runtime commit26c4af5.
 Final documentation-only tip may follow. CI run45315579098 passed frontend and Linux
 container startup/restart/replacement/persistence checks. Backend108 tests passed;
@@ -13,12 +23,12 @@ retested successfully. No cloud costs, paid integrations or public backend were 
 Local frontend http://localhost:5173/ and docs http://127.0.0.1:8000/docs were restarted
 and verified200; preserve the synthetic database/access files. Credentials are revealed
 only by the operator command in LOCAL_DEMO_ACCESS.md. Work is closed at the user's
-request; no background agent task or Phase6 is scheduled. The scheduler remains part
+request; no background agent task or Phase 6 is scheduled. The scheduler remains part
 of the local demonstration. FINAL_RELEASE_REPORT.md is the authoritative current report.
 
 ## Current final release mission checkpoint
 
-[FINAL_RELEASE_REPORT.md](FINAL_RELEASE_REPORT.md) supersedes historical Phase5
+[FINAL_RELEASE_REPORT.md](FINAL_RELEASE_REPORT.md) supersedes historical Phase 5
 counts below: 108 backend tests passed in 155.43s, frontend 25 in 1.85s, five Chrome
 regressions and 16 persistent-demo screenshots passed with zero JS errors.
 The frontend http://localhost:5173/ and API http://127.0.0.1:8000/docs are running,
@@ -42,7 +52,7 @@ Resume from current Git/remote/local health and preserve the completed push/publ
 reviewed, feedback-complete simulated visit; no real citizen data was used. Demo-only
 accounts reject login and existing sessions outside development. No Phase 6.
 
-## Historical Phase5 closure evidence
+## Historical Phase 5 closure evidence
 
 Baseline: `4098da0`. Local integrated release candidate; public release is blocked.
 No Phase 6, public deployment, GitHub push, cloud provisioning or paid model/message

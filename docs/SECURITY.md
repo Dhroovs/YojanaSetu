@@ -63,3 +63,37 @@ Never place secrets in `VITE_*`, Git, screenshots, logs or issue comments. `.env
 data, downloads, models, backups and build artifacts are ignored. Account aliases
 should not be personal names/contact data. Tests use synthetic records only. No Aadhaar
 authentication, biometrics, covert tracking or official government submission exists.
+
+
+## Beginner security model and role matrix
+
+Authentication answers who is calling. Authorization answers what that caller may do to this object.
+Opaque random bearer tokens are hashed in Mongo, checked for expiry and matched to a current active account.
+There is no JWT parser here. Logout revokes the session; role changes increment auth_version. Public signup
+creates only citizen accounts, with consent and alias restrictions. Scrypt hashes passwords with salts;
+password whitespace is preserved rather than silently changed.
+
+| Capability | Citizen | Worker | Coordinator | Administrator |
+| --- | --- | --- | --- | --- |
+| Read a private case | Own | Explicit case assignment | Responsible coordinator / permitted claim flow | Administrative access |
+| Submit a private case | Own citizen identity | No | No | No citizen impersonation route |
+| Review a checklist | No | No reviewer authority | Authorized responsible case | Authorized administrative case |
+| Create a visit | Own with consent | No | No | No citizen impersonation route |
+| Read a visit | Own | Current verified assignment; exact address gated by acceptance | Responsible coordinator / permitted claim | Administrative access |
+| Accept/check in/submit outcome | No | Assigned accepted worker and valid stage/time | No worker impersonation | No worker impersonation |
+| Assign/review visit outcome | No | No | Authorized confirmed review | Authorized confirmed review |
+| Worker verification/user roles | No | Own profile/availability only | No admin verification authority | Guarded admin operations |
+| Ingest official sources | No browser role | No browser role | No browser role | Operator CLI, not an admin-browser write endpoint |
+
+Case worker assignment and visit worker assignment are different relations. Role alone does not confer
+access to every private record. Hiding a button is only a UI convenience: an attacker can call HTTP directly,
+so services recheck authority and exact object links. Graphs cannot bypass those same checks.
+
+Source/model text is untrusted. Fixed intents, bounded calls, typed outputs, current evidence/hash checks
+and quote validation reduce prompt-injection/unsupported-claim risk; they do not prove every possible
+attack is solved. Rate limits, upload bounds, private storage, safe error/log projections, consent,
+CAS/idempotency and audit support the overall design. This is not an independent penetration-test certificate.
+
+Before public backend release, resolve the Chroma gate and review authenticated/encrypted Mongo, TLS,
+secret management, upload scanning/retention, recovery/MFA, proxy admission policy, complete restore and
+load/failure behavior. No government endorsement, Aadhaar KYC or automatic benefit determination is provided.
