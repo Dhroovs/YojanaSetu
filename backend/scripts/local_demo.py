@@ -1,4 +1,4 @@
-"""Windows-only isolated synthetic demo. Credentials are encrypted by Windows DPAPI."""
+"""Isolated synthetic demo; Windows DPAPI or owner-only Linux credential storage."""
 
 import argparse
 import asyncio
@@ -23,9 +23,19 @@ from app.cases.models import now_utc
 from app.config import Settings
 
 ROOT = Path(__file__).resolve().parents[2]
-DIRECTORY = ROOT / ".tools" / "inspection-demo"
+FRONTEND_DIRECTORY = Path(os.environ.get("YOJANASETU_FRONTEND_DIRECTORY", ROOT / "frontend"))
+DIRECTORY = (
+    ROOT / ".tools" / "inspection-demo"
+    if os.name == "nt"
+    else Path.home() / ".local" / "share" / "yojanasetu-inspection-demo"
+)
 MANIFEST = DIRECTORY / "manifest.json"
-ACCESS = DIRECTORY / "access.dpapi"
+ACCESS = DIRECTORY / ("access.dpapi" if os.name == "nt" else "access.json")
+PROCESS_OPTIONS = (
+    {"creationflags": subprocess.CREATE_NO_WINDOW}
+    if os.name == "nt"
+    else {"start_new_session": True}
+)
 API = "http://127.0.0.1:8000/api"
 WEB = "http://localhost:5173"
 ROLES = {
@@ -51,6 +61,13 @@ def powershell(command, data=""):
 
 
 def encrypt_access(accounts):
+    if os.name != "nt":
+        # Local Linux storage uses filesystem protection, not DPAPI encryption.
+        # O_EXCL refuses to replace an existing file or follow a symlink.
+        fd = os.open(ACCESS, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+        with os.fdopen(fd, "w", encoding="utf-8") as output:
+            json.dump(accounts, output)
+        return
     encrypted = powershell(
         "$s=[Console]::In.ReadToEnd();"
         "ConvertFrom-SecureString (ConvertTo-SecureString $s -AsPlainText -Force)",
@@ -60,6 +77,11 @@ def encrypt_access(accounts):
 
 
 def read_access():
+    if os.name != "nt":
+        info = ACCESS.lstat()
+        if ACCESS.is_symlink() or info.st_uid != os.getuid() or info.st_mode & 0o077:
+            raise RuntimeError("Demo credentials must be an owner-only local file")
+        return json.loads(ACCESS.read_text(encoding="utf-8"))
     plain = powershell(
         "$s=ConvertTo-SecureString ([Console]::In.ReadToEnd().Trim());"
         "[System.Net.NetworkCredential]::new('', $s).Password",
@@ -151,7 +173,7 @@ def start(settings, manifest):
                 "5173",
                 "--strictPort",
             ],
-            ROOT / "frontend",
+            FRONTEND_DIRECTORY,
         ),
     }
     manifest["processes"] = {}
@@ -163,7 +185,7 @@ def start(settings, manifest):
                 env=env,
                 stdout=output,
                 stderr=output,
-                creationflags=subprocess.CREATE_NO_WINDOW,
+                **PROCESS_OPTIONS,
             )
         manifest["processes"][name] = process.pid
         save(manifest)
@@ -201,7 +223,7 @@ def start_scheduler(settings, manifest):
             env=environment(settings, manifest),
             stdout=output,
             stderr=output,
-            creationflags=subprocess.CREATE_NO_WINDOW,
+            **PROCESS_OPTIONS,
         )
     manifest["processes"]["scheduler"] = process.pid
     save(manifest)
@@ -533,8 +555,6 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("action", choices=["start", "access", "status"])
     args = parser.parse_args()
-    if os.name != "nt":
-        raise SystemExit("This local demo helper uses Windows DPAPI; do not deploy it")
     if args.action == "access":
         # Only an explicit operator command displays passwords. Never invoke in CI/log capture.
         for alias, password in read_access().items():
@@ -544,7 +564,9 @@ def main():
         print(MANIFEST.read_text(encoding="utf-8"))
         return
     settings = Settings()
-    DIRECTORY.mkdir(parents=True, exist_ok=True)
+    DIRECTORY.mkdir(parents=True, exist_ok=True, mode=0o700)
+    if os.name != "nt" and DIRECTORY.stat().st_mode & 0o077:
+        raise RuntimeError("Linux demo directory must be private (mode 0700)")
     if MANIFEST.exists():
         manifest, accounts = json.loads(MANIFEST.read_text()), read_access()
     else:
@@ -567,8 +589,8 @@ def main():
     start_scheduler(settings, manifest)
     print(f"Demo running: {WEB}; API docs: {manifest['api_docs']}")
     print("Synthetic database only. To inspect temporary credentials locally:")
-    print("  .\\.venv\\Scripts\\python.exe -m scripts.local_demo access")
-    print("Do not copy the encrypted access file or demo database into production.")
+    print(f"  {sys.executable} -m scripts.local_demo access")
+    print("Do not copy the local access file or demo database into production.")
 
 
 if __name__ == "__main__":

@@ -4,6 +4,50 @@ Frontend: **http://localhost:5173/**. API documentation: **http://127.0.0.1:8000
 These addresses work on the development PC, not on a remote interviewer's computer.
 Health/readiness and the frontend returned HTTP 200 during final verification.
 
+## Active WSL demo (27 November 2026)
+
+The current running demo uses Ubuntu 24.04 under WSL2 because Windows Smart App
+Control blocked unsigned native Python/Git libraries. Windows protection remains
+enabled. The original Windows database, documents and encrypted credentials are
+preserved; the Linux demo has a separate synthetic database and separate passwords.
+
+From your own PowerShell terminal, display the Linux demo passwords locally:
+
+```powershell
+wsl -d Ubuntu-24.04 -u yojana -- bash /mnt/e/YojanaSetu/YojanaSetu/backend/scripts/wsl_demo.sh access
+```
+
+Do not paste that output into chat or screenshots. Choose `demo-citizen` first;
+the remaining aliases and roles are listed below. Linux credentials use owner-only
+filesystem permissions (0600 file, 0700 directory), not Windows DPAPI encryption.
+
+After a later PC restart, start the already configured runtime with:
+
+```powershell
+wsl -d Ubuntu-24.04 -u yojana -- bash /mnt/e/YojanaSetu/YojanaSetu/backend/scripts/wsl_demo.sh start
+```
+
+Use `status` instead of `start` to inspect the non-secret process manifest. The
+launcher starts isolated MongoDB on loopback port 27018, verifies its database
+directory, copies current frontend source into the Linux runtime and starts the
+backend, frontend and worker. It requires the installed local Node 24, Python venv
+and reviewed source catalogue; it is not a fresh-machine installer. It refuses
+occupied application ports. Files live under the Linux user's
+`~/.local/share/yojanasetu-runtime` and `~/.local/share/yojanasetu-inspection-demo`.
+
+Verification on 27 November: backend 108/108 tests passed in 46.08 seconds; frontend
+25/25 tests, lint and build passed; 16 Chrome screenshots and real role/RAG/reminder/
+private-case assertions passed with zero JavaScript errors. Pytest emitted one
+cache-permission warning for the Windows checkout; future runs can use
+`-o cache_dir=/home/yojana/.cache/yojanasetu-pytest`.
+Four reviewed source snapshots produced 28 real ONNX-backed chunks. A live
+government-source download failed certificate validation; TLS validation remains
+enabled, and the restored catalogue uses the preserved 23 November snapshots.
+This does not resolve the existing upstream Chroma security advisories or deploy
+a public backend. No paid services or hosted model calls were used.
+
+## Original Windows demo
+
 The inspection environment uses a dedicated random `yojanasetu_inspection_demo_*`
 database and a copied public vector index in `.tools/inspection-demo`. Existing citizen
 records, sessions and private documents were not copied, overwritten or deleted.

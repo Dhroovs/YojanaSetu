@@ -4,8 +4,11 @@
 
 Demo-only users reject password login and existing sessions outside development;
 a real-Mongo regression verifies both paths and ordinary-account continuity.
-Passwords are Windows-user DPAPI encrypted under ignored .tools/inspection-demo,
-never committed/logged. Do not export the demo database into production. The app
+On Windows, passwords are user-DPAPI encrypted under ignored .tools/inspection-demo.
+On Linux, the helper stores them in an owner-only file (0600) in an owner-only
+directory (0700) at ~/.local/share/yojanasetu-inspection-demo; this is filesystem
+protection, not encryption. Credentials are never committed/logged. Do not export
+the demo database into production. The app
 binds to loopback; no public tunnel is started. See LOCAL_DEMO_ACCESS.md.
 
 This is a local release candidate, not production security certification. The current
