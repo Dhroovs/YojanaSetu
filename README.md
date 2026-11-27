@@ -16,7 +16,7 @@ YojanaSetu connects reviewed government-scheme information to private assistance
 
 **For recruiters:** a React/FastAPI platform combining source-backed retrieval with secure case and visit workflows. Key engineering work includes provenance checks, authorized agent handoffs, durable reminders and concurrent worker reservations. Humans retain authority over document review, assignment and completion.
 
-**For beginners:** imagine someone seeking insurance-scheme guidance. They search the catalogue, ask a question and inspect its supporting official passages. They can create a private case, follow a source-backed checklist, upload a synthetic/redacted document, receive reminders and ask a coordinator for help. A linked visit can proceed through approval, assignment, acceptance, check-in, human outcome review and feedback.
+**For beginners:** imagine someone seeking insurance-scheme guidance. They search the catalogue, ask a question and inspect its supporting official passages. They can create a private case, follow a source-backed checklist, upload a synthetic/redacted document, receive reminders and ask a coordinator for help. A linked visit can proceed through approval, assignment, acceptance, check-in, human outcome review and feedback..
 
 The intended users include rural and elderly citizens, people with limited digital confidence, workers and coordinating organizations. Draft language support, accessible controls and human assistance address those needs. These are intended benefits; no field adoption, user counts or social-impact statistics have been established.
 
